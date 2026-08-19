@@ -32,11 +32,6 @@ class Outlet extends Model
         return $this->hasMany(AttendanceRecord::class);
     }
 
-    public function qrCodes(): HasMany
-    {
-        return $this->hasMany(OutletQrCode::class);
-    }
-
     public function checkpoints(): HasMany
     {
         return $this->hasMany(Checkpoint::class);

@@ -6,15 +6,18 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'user_id', 'outlet_id', 'shift_date',
-    'clock_in_at', 'clock_in_lat', 'clock_in_lng', 'clock_in_distance_m', 'status', 'clock_in_method',
-    'clock_out_at', 'clock_out_lat', 'clock_out_lng', 'clock_out_method', 'synced_offline',
+    'clock_in_at', 'clock_in_lat', 'clock_in_lng', 'clock_in_distance_m', 'status', 'clock_in_method', 'clock_in_photo',
+    'clock_out_at', 'clock_out_lat', 'clock_out_lng', 'clock_out_method', 'clock_out_photo', 'synced_offline',
 ])]
 class AttendanceRecord extends Model
 {
     use HasFactory;
+
+    protected $appends = ['clock_in_photo_url', 'clock_out_photo_url'];
 
     protected function casts(): array
     {
@@ -28,6 +31,16 @@ class AttendanceRecord extends Model
             'clock_out_lng' => 'float',
             'synced_offline' => 'boolean',
         ];
+    }
+
+    public function getClockInPhotoUrlAttribute(): ?string
+    {
+        return $this->clock_in_photo ? Storage::disk('public')->url($this->clock_in_photo) : null;
+    }
+
+    public function getClockOutPhotoUrlAttribute(): ?string
+    {
+        return $this->clock_out_photo ? Storage::disk('public')->url($this->clock_out_photo) : null;
     }
 
     public function user(): BelongsTo

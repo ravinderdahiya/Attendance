@@ -15,7 +15,8 @@ class ShiftController extends Controller
         $to = $request->query('to', now()->endOfWeek()->toDateString());
 
         $shifts = Shift::with(['user:id,name,staff_code', 'outlet:id,name'])
-            ->whereBetween('shift_date', [$from, $to])
+            ->whereDate('shift_date', '>=', $from)
+            ->whereDate('shift_date', '<=', $to)
             ->when($request->query('user_id'), fn ($q, $userId) => $q->where('user_id', $userId))
             ->orderBy('shift_date')
             ->orderBy('start_time')

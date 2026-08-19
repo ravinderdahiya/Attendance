@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Arr;
 
 class StaffController extends Controller
 {
@@ -28,15 +28,36 @@ class StaffController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'mobile' => 'required|string|unique:users,mobile',
-            'staff_code' => 'required|string|unique:users,staff_code',
+            // The PIN is how this mobile number logs into the staff app - only
+            // the admin sets it, so only an admin-registered number+PIN pair works.
+            'pin' => 'required|digits:4',
             'designation' => 'nullable|string|max:255',
             'department' => 'nullable|string|max:255',
             'outlet_id' => 'required|exists:outlets,id',
+            'pay_type' => 'required|in:monthly,daily',
+            'pay_rate' => 'required|numeric|min:0',
         ]);
 
-        $staff = User::create([...$data, 'role' => 'staff', 'is_active' => true]);
+        $staff = User::create([
+            ...Arr::except($data, ['pin']),
+            'staff_code' => $this->nextStaffCode(),
+            'password' => $data['pin'], // hashed automatically by the model's 'hashed' cast
+            'role' => 'staff',
+            'is_active' => true,
+        ]);
 
         return response()->json(['success' => true, 'staff' => $staff->load('outlet')], 201);
+    }
+
+    /** Next sequential "STF-xxxx" code, continuing from whatever the highest one so far is. */
+    private function nextStaffCode(): string
+    {
+        $highest = User::where('staff_code', 'like', 'STF-%')
+            ->get()
+            ->map(fn (User $u) => (int) substr($u->staff_code, 4))
+            ->max();
+
+        return 'STF-' . str_pad((string) (($highest ?? 1000) + 1), 4, '0', STR_PAD_LEFT);
     }
 
     public function update(Request $request, User $staff)
@@ -47,11 +68,20 @@ class StaffController extends Controller
             'name' => 'sometimes|string|max:255',
             'mobile' => ['sometimes', 'string', "unique:users,mobile,{$staff->id}"],
             'staff_code' => ['sometimes', 'string', "unique:users,staff_code,{$staff->id}"],
+            // Optional here - only reset the login PIN when the admin actually types a new one.
+            'pin' => 'sometimes|digits:4',
             'designation' => 'nullable|string|max:255',
             'department' => 'nullable|string|max:255',
             'outlet_id' => 'sometimes|exists:outlets,id',
             'is_active' => 'sometimes|boolean',
+            'pay_type' => 'sometimes|in:monthly,daily',
+            'pay_rate' => 'sometimes|numeric|min:0',
         ]);
+
+        if (isset($data['pin'])) {
+            $data['password'] = $data['pin'];
+        }
+        unset($data['pin']);
 
         $staff->update($data);
 

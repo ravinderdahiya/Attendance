@@ -1,14 +1,16 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models.dart';
 import '../services/api_service.dart';
 import '../services/offline_queue_service.dart';
 import '../services/sync_bus.dart';
 import '../theme.dart';
-import 'qr_scan_screen.dart';
 
-enum _Status { idle, locating, submitting, success, blocked, error, queued, patrolLogged }
+enum _Status { idle, locating, submitting, success, blocked, error, queued }
 
 class ClockInScreen extends StatefulWidget {
   const ClockInScreen({super.key});
@@ -77,6 +79,24 @@ class _ClockInScreenState extends State<ClockInScreen> {
     }
   }
 
+  /// Opens the live camera for an attendance selfie - no gallery picker, so
+  /// staff can't submit an old or borrowed photo as "proof" of presence.
+  /// The shot is copied into app-private storage under a unique name so it
+  /// survives until synced, even if this was a queued offline event.
+  Future<File> _capturePhoto() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.front,
+      maxWidth: 1280,
+      imageQuality: 80,
+    );
+    if (picked == null) throw Exception('A selfie is required to mark attendance.');
+
+    final dir = await getApplicationDocumentsDirectory();
+    final dest = '${dir.path}/attendance_${DateTime.now().microsecondsSinceEpoch}.jpg';
+    return File(picked.path).copy(dest);
+  }
+
   Future<Position> _resolvePosition() async {
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -104,16 +124,26 @@ class _ClockInScreenState extends State<ClockInScreen> {
       setState(() { _status = _Status.error; _message = e.toString().replaceFirst('Exception: ', ''); });
       return;
     }
+
+    late final File photo;
+    try {
+      photo = await _capturePhoto();
+    } catch (e) {
+      setState(() { _status = _Status.idle; _message = e.toString().replaceFirst('Exception: ', ''); });
+      return;
+    }
+
     setState(() => _status = _Status.submitting);
 
     try {
-      final record = await ApiService.clockIn(lat: position.latitude, lng: position.longitude);
+      final record = await ApiService.clockIn(lat: position.latitude, lng: position.longitude, photo: photo);
       setState(() { _status = _Status.success; _record = record; });
     } on ApiException catch (e) {
       setState(() { _status = _Status.blocked; _message = e.message; });
     } catch (_) {
       await OfflineQueueService.enqueue(QueuedEvent(
-        type: QueuedEventType.clockIn, lat: position.latitude, lng: position.longitude, occurredAt: DateTime.now(),
+        type: QueuedEventType.clockIn, lat: position.latitude, lng: position.longitude,
+        occurredAt: DateTime.now(), photoPath: photo.path,
       ));
       await _refreshPendingCount();
       setState(() { _status = _Status.queued; _queuedClockedIn = true; });
@@ -131,42 +161,28 @@ class _ClockInScreenState extends State<ClockInScreen> {
       return;
     }
 
+    late final File photo;
     try {
-      final record = await ApiService.clockOut(lat: position.latitude, lng: position.longitude);
+      photo = await _capturePhoto();
+    } catch (e) {
+      setState(() { _clockingOut = false; _message = e.toString().replaceFirst('Exception: ', ''); });
+      return;
+    }
+
+    try {
+      final record = await ApiService.clockOut(lat: position.latitude, lng: position.longitude, photo: photo);
       setState(() => _record = record);
     } on ApiException catch (e) {
       setState(() => _message = e.message);
     } catch (_) {
       await OfflineQueueService.enqueue(QueuedEvent(
-        type: QueuedEventType.clockOut, lat: position.latitude, lng: position.longitude, occurredAt: DateTime.now(),
+        type: QueuedEventType.clockOut, lat: position.latitude, lng: position.longitude,
+        occurredAt: DateTime.now(), photoPath: photo.path,
       ));
       await _refreshPendingCount();
       setState(() { _status = _Status.queued; _queuedClockedIn = false; });
     } finally {
       if (mounted) setState(() => _clockingOut = false);
-    }
-  }
-
-  /// One scanner, any printed code - the server (not this screen) decides
-  /// whether it was an entrance code (attendance) or a patrol checkpoint.
-  Future<void> _scanQr() async {
-    final token = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const QrScanScreen()));
-    if (token == null || !mounted) return;
-
-    setState(() { _status = _Status.submitting; _message = null; });
-    try {
-      final result = await ApiService.scanQr(token);
-      if (result.type == 'patrol') {
-        setState(() { _status = _Status.patrolLogged; _message = result.message; });
-      } else {
-        setState(() { _status = _Status.success; _record = result.record; });
-      }
-    } on ApiException catch (e) {
-      setState(() { _status = _Status.blocked; _message = e.message; });
-    } catch (_) {
-      await OfflineQueueService.enqueue(QueuedEvent(type: QueuedEventType.qrScan, qrToken: token, occurredAt: DateTime.now()));
-      await _refreshPendingCount();
-      setState(() { _status = _Status.queued; _queuedClockedIn = true; });
     }
   }
 
@@ -188,14 +204,14 @@ class _ClockInScreenState extends State<ClockInScreen> {
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _status == _Status.patrolLogged ? AppColors.mintBg : AppColors.coralBg,
+                color: AppColors.coralBg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 _message!,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _status == _Status.patrolLogged ? AppColors.mintDeep : AppColors.coralDeep,
+                style: const TextStyle(
+                  color: AppColors.coralDeep,
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
                 ),
@@ -215,17 +231,6 @@ class _ClockInScreenState extends State<ClockInScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(_buttonLabel(alreadyClockedIn), style: const TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: OutlinedButton.icon(
-              onPressed: (_status == _Status.locating || _status == _Status.submitting || _clockingOut) ? null : _scanQr,
-              icon: const Icon(Icons.qr_code_scanner, size: 18),
-              label: const Text('Scan QR instead', style: TextStyle(fontWeight: FontWeight.w700)),
-              style: OutlinedButton.styleFrom(foregroundColor: AppColors.terra, side: const BorderSide(color: AppColors.terra)),
             ),
           ),
         ],
@@ -269,8 +274,6 @@ class _ClockInScreenState extends State<ClockInScreen> {
         return 'Outside the outlet radius';
       case _Status.queued:
         return 'Recorded offline — will sync automatically';
-      case _Status.patrolLogged:
-        return 'Checkpoint logged';
       default:
         return 'Ready to clock in';
     }
@@ -286,7 +289,6 @@ class _ClockInScreenState extends State<ClockInScreen> {
   Widget _buildRing() {
     final distance = _record?.clockInDistanceM;
     final isQueued = _status == _Status.queued;
-    final isPatrol = _status == _Status.patrolLogged;
     final ringColor = _status == _Status.blocked ? AppColors.coralBg : (isQueued ? AppColors.amberBg : AppColors.mintBg);
     final textColor = _status == _Status.blocked ? AppColors.coralDeep : (isQueued ? AppColors.amber : AppColors.mintDeep);
 
@@ -298,18 +300,16 @@ class _ClockInScreenState extends State<ClockInScreen> {
             ? const CircularProgressIndicator()
             : isQueued
                 ? Icon(Icons.cloud_off, size: 36, color: textColor)
-                : isPatrol
-                    ? Icon(Icons.shield_outlined, size: 36, color: AppColors.mintDeep)
-                    : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            distance != null ? '${distance}m' : '—',
-                            style: TextStyle(fontFamily: 'monospace', fontSize: 26, fontWeight: FontWeight.w700, color: textColor),
-                          ),
-                          Text('FROM OUTLET', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: textColor, letterSpacing: 0.5)),
-                        ],
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        distance != null ? '${distance}m' : '—',
+                        style: TextStyle(fontFamily: 'monospace', fontSize: 26, fontWeight: FontWeight.w700, color: textColor),
                       ),
+                      Text('FROM OUTLET', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: textColor, letterSpacing: 0.5)),
+                    ],
+                  ),
       ),
     );
   }

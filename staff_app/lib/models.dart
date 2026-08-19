@@ -80,6 +80,8 @@ class AttendanceRecord {
   final int? clockInDistanceM;
   final String? status; // on_time | blocked
   final DateTime? clockOutAt;
+  final String? clockInPhotoUrl;
+  final String? clockOutPhotoUrl;
 
   AttendanceRecord({
     required this.id,
@@ -88,6 +90,8 @@ class AttendanceRecord {
     required this.clockInDistanceM,
     required this.status,
     required this.clockOutAt,
+    this.clockInPhotoUrl,
+    this.clockOutPhotoUrl,
   });
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) => AttendanceRecord(
@@ -97,24 +101,8 @@ class AttendanceRecord {
         clockInDistanceM: json['clock_in_distance_m'],
         status: json['status'],
         clockOutAt: json['clock_out_at'] != null ? DateTime.parse(json['clock_out_at']) : null,
-      );
-}
-
-/// Result of scanning any printed QR code - 'attendance' means an entrance
-/// code toggled clock-in/out, 'patrol' means a security checkpoint was logged.
-class ScanResult {
-  final String type; // attendance | patrol
-  final String message;
-  final AttendanceRecord? record;
-  final String? checkpointName;
-
-  ScanResult({required this.type, required this.message, this.record, this.checkpointName});
-
-  factory ScanResult.fromJson(Map<String, dynamic> json) => ScanResult(
-        type: json['type'],
-        message: json['message'],
-        record: json['record'] != null ? AttendanceRecord.fromJson(json['record']) : null,
-        checkpointName: json['checkpoint']?['name'],
+        clockInPhotoUrl: json['clock_in_photo_url'],
+        clockOutPhotoUrl: json['clock_out_photo_url'],
       );
 }
 

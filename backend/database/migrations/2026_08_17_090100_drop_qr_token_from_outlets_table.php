@@ -12,6 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('outlets', function (Blueprint $table) {
+            $table->dropUnique('outlets_qr_token_unique');
+        });
+
+        Schema::table('outlets', function (Blueprint $table) {
             $table->dropColumn('qr_token');
         });
     }

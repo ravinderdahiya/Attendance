@@ -12,7 +12,7 @@ class ShiftController extends Controller
     public function today(Request $request)
     {
         $shifts = Shift::where('user_id', $request->user()->id)
-            ->where('shift_date', now()->toDateString())
+            ->whereDate('shift_date', now()->toDateString())
             ->orderBy('start_time')
             ->get();
 

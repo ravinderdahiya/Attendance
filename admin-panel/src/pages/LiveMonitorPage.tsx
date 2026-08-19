@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import * as api from '../services/api';
 import type { AttendanceRecord } from '../types';
 
@@ -13,6 +13,7 @@ export default function LiveMonitorPage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [filter, setFilter] = useState<string | undefined>(undefined);
   const [error, setError] = useState('');
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   const load = () => api.getLiveMonitor(filter).then(({ records }) => setRecords(records)).catch((err) => setError((err as Error).message));
 
@@ -57,6 +58,7 @@ export default function LiveMonitorPage() {
           <table className="w-full text-xs">
             <thead>
               <tr className="text-ink-600 uppercase text-[10px]">
+                <th className="text-left p-3 font-bold border-b-2 border-ink-300">Photo</th>
                 <th className="text-left p-3 font-bold border-b-2 border-ink-300">Staff</th>
                 <th className="text-left p-3 font-bold border-b-2 border-ink-300">Role</th>
                 <th className="text-left p-3 font-bold border-b-2 border-ink-300">Time</th>
@@ -67,6 +69,22 @@ export default function LiveMonitorPage() {
             <tbody>
               {records.map((r) => (
                 <tr key={r.id} className="border-b border-paper">
+                  <td className="p-3">
+                    <div className="flex items-center gap-1.5">
+                      {r.clock_in_photo_url ? (
+                        <button onClick={() => setLightbox(r.clock_in_photo_url)} title="Clock-in photo">
+                          <img src={r.clock_in_photo_url} alt="Clock-in" className="w-8 h-8 rounded-lg object-cover border border-line" />
+                        </button>
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg bg-ink-300/30 border border-line" />
+                      )}
+                      {r.clock_out_photo_url && (
+                        <button onClick={() => setLightbox(r.clock_out_photo_url)} title="Clock-out photo">
+                          <img src={r.clock_out_photo_url} alt="Clock-out" className="w-8 h-8 rounded-lg object-cover border border-line" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
                   <td className="p-3 font-semibold text-ink-900">{r.user?.name}</td>
                   <td className="p-3 text-ink-600">{r.user?.designation ?? '—'}</td>
                   <td className="p-3 text-ink-600">{r.clock_in_at ? new Date(r.clock_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
@@ -82,6 +100,13 @@ export default function LiveMonitorPage() {
           </table>
         )}
       </div>
+
+      {lightbox && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setLightbox(null)}>
+          <button className="absolute top-4 right-4 text-white" onClick={() => setLightbox(null)}><X className="w-6 h-6" /></button>
+          <img src={lightbox} alt="Attendance selfie" className="max-w-full max-h-full rounded-2xl" />
+        </div>
+      )}
     </div>
   );
 }

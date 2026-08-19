@@ -8,6 +8,7 @@ use App\Models\ShiftNotification;
 use App\Support\Geo;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AttendanceController extends Controller
@@ -16,7 +17,7 @@ class AttendanceController extends Controller
     public function today(Request $request)
     {
         $record = AttendanceRecord::where('user_id', $request->user()->id)
-            ->where('shift_date', now()->toDateString())
+            ->whereDate('shift_date', now()->toDateString())
             ->first();
 
         return response()->json(['success' => true, 'record' => $record]);
@@ -39,7 +40,8 @@ class AttendanceController extends Controller
         $end = $start->copy()->endOfMonth();
 
         $records = AttendanceRecord::where('user_id', $request->user()->id)
-            ->whereBetween('shift_date', [$start->toDateString(), $end->toDateString()])
+            ->whereDate('shift_date', '>=', $start->toDateString())
+            ->whereDate('shift_date', '<=', $end->toDateString())
             ->get()
             ->keyBy(fn ($r) => $r->shift_date->toDateString());
 
@@ -65,7 +67,7 @@ class AttendanceController extends Controller
         $since = now()->subDays(29)->toDateString();
 
         $records = AttendanceRecord::where('user_id', $userId)
-            ->where('shift_date', '>=', $since)
+            ->whereDate('shift_date', '>=', $since)
             ->get();
 
         $withOutcome = $records->whereIn('status', ['on_time', 'blocked']);
@@ -89,10 +91,7 @@ class AttendanceController extends Controller
         ]);
     }
 
-    /**
-     * GPS-based clock-in. QR-based attendance goes through ScanController
-     * instead (one endpoint recognizes both entrance and patrol codes).
-     */
+    /** GPS-based clock-in - the only way to mark attendance, always geofenced. */
     public function clockIn(Request $request)
     {
         $data = $this->validateProof($request);
@@ -112,27 +111,44 @@ class AttendanceController extends Controller
         $distance = Geo::distanceMeters($data['lat'], $data['lng'], $outlet->latitude, $outlet->longitude);
         $status = $distance <= $outlet->radius_meters ? 'on_time' : 'blocked';
 
-        $record = AttendanceRecord::updateOrCreate(
-            ['user_id' => $user->id, 'shift_date' => $occurredAt->toDateString()],
-            [
-                'outlet_id' => $outlet->id,
-                'clock_in_at' => $occurredAt,
-                'clock_in_lat' => $data['lat'],
-                'clock_in_lng' => $data['lng'],
-                'clock_in_distance_m' => $distance,
-                'status' => $status,
-                'clock_in_method' => 'gps',
-                // Reopen the day - a fresh clock-in supersedes any earlier
-                // clock-out on the same day (e.g. re-clocking in after a
-                // break), otherwise the stale clock-out would outlive this
-                // new session and read as "already clocked out" again.
-                'clock_out_at' => null,
-                'clock_out_lat' => null,
-                'clock_out_lng' => null,
-                'clock_out_method' => null,
-                'synced_offline' => $syncedOffline,
-            ],
-        );
+        $attributes = [
+            'outlet_id' => $outlet->id,
+            'clock_in_at' => $occurredAt,
+            'clock_in_lat' => $data['lat'],
+            'clock_in_lng' => $data['lng'],
+            'clock_in_distance_m' => $distance,
+            'status' => $status,
+            'clock_in_method' => 'gps',
+            'clock_in_photo' => $this->storePhoto($request),
+            // Reopen the day - a fresh clock-in supersedes any earlier
+            // clock-out on the same day (e.g. re-clocking in after a
+            // break), otherwise the stale clock-out would outlive this
+            // new session and read as "already clocked out" again.
+            'clock_out_at' => null,
+            'clock_out_lat' => null,
+            'clock_out_lng' => null,
+            'clock_out_method' => null,
+            'clock_out_photo' => null,
+            'clock_out_distance_m' => null,
+            'synced_offline' => $syncedOffline,
+        ];
+
+        // Not updateOrCreate() - its match array compares shift_date with a
+        // plain equality, but the column is stored with a time component, so
+        // it would never find today's existing row and try to insert a
+        // second one (colliding with the user_id+shift_date unique index).
+        $record = AttendanceRecord::where('user_id', $user->id)
+            ->whereDate('shift_date', $occurredAt->toDateString())
+            ->first();
+        if ($record) {
+            $record->update($attributes);
+        } else {
+            $record = AttendanceRecord::create([
+                'user_id' => $user->id,
+                'shift_date' => $occurredAt->toDateString(),
+                ...$attributes,
+            ]);
+        }
 
         $message = $status === 'on_time'
             ? 'Clocked in for your shift - verified on-site'
@@ -152,11 +168,17 @@ class AttendanceController extends Controller
     {
         $data = $this->validateProof($request);
 
+        $user = $request->user();
+        $outlet = $user->outlet;
+        if (! $outlet) {
+            throw ValidationException::withMessages(['outlet' => 'No outlet assigned to this account - contact your manager.']);
+        }
+
         $occurredAt = isset($data['occurred_at']) ? Carbon::parse($data['occurred_at']) : now();
         $syncedOffline = isset($data['occurred_at']);
 
-        $record = AttendanceRecord::where('user_id', $request->user()->id)
-            ->where('shift_date', $occurredAt->toDateString())
+        $record = AttendanceRecord::where('user_id', $user->id)
+            ->whereDate('shift_date', $occurredAt->toDateString())
             ->whereNotNull('clock_in_at')
             ->whereNull('clock_out_at')
             ->first();
@@ -165,11 +187,23 @@ class AttendanceController extends Controller
             throw ValidationException::withMessages(['record' => 'No open clock-in found for that day.']);
         }
 
+        // Same 100m geofence as clock-in - staff must still be on-site to
+        // clock out, not just to clock in.
+        $distance = Geo::distanceMeters($data['lat'], $data['lng'], $outlet->latitude, $outlet->longitude);
+        if ($distance > $outlet->radius_meters) {
+            return response()->json([
+                'success' => false,
+                'message' => "You're {$distance}m from the outlet - outside the {$outlet->radius_meters}m radius.",
+            ], 422);
+        }
+
         $record->update([
             'clock_out_at' => $occurredAt,
             'clock_out_lat' => $data['lat'],
             'clock_out_lng' => $data['lng'],
+            'clock_out_distance_m' => $distance,
             'clock_out_method' => 'gps',
+            'clock_out_photo' => $this->storePhoto($request),
             'synced_offline' => $record->synced_offline || $syncedOffline,
         ]);
 
@@ -182,6 +216,16 @@ class AttendanceController extends Controller
             'lat' => 'required|numeric|between:-90,90',
             'lng' => 'required|numeric|between:-180,180',
             'occurred_at' => 'nullable|date',
+            // A live selfie proving physical presence, alongside the GPS check -
+            // captured on-device even for an offline-queued event, then synced
+            // together with it once connectivity returns.
+            'photo' => 'required|image|max:5120',
         ]);
+    }
+
+    /** Stores the uploaded selfie (if any) under storage/app/public and returns its relative path. */
+    private function storePhoto(Request $request): ?string
+    {
+        return $request->hasFile('photo') ? $request->file('photo')->store('attendance-photos', 'public') : null;
     }
 }

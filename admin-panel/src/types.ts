@@ -9,6 +9,8 @@ export interface Outlet {
   staff_count?: number;
 }
 
+export type PayType = 'monthly' | 'daily';
+
 export interface StaffUser {
   id: number;
   role: 'staff' | 'manager';
@@ -20,6 +22,8 @@ export interface StaffUser {
   outlet_id: number | null;
   outlet?: Outlet | null;
   is_active: boolean;
+  pay_type?: PayType | null;
+  pay_rate?: number | null;
 }
 
 export type AttendanceStatus = 'on_time' | 'blocked';
@@ -33,6 +37,8 @@ export interface AttendanceRecord {
   clock_in_distance_m: number | null;
   status: AttendanceStatus | null;
   clock_out_at: string | null;
+  clock_in_photo_url: string | null;
+  clock_out_photo_url: string | null;
   user?: Pick<StaffUser, 'id' | 'name' | 'designation' | 'staff_code'>;
   outlet?: Pick<Outlet, 'id' | 'name'>;
 }
@@ -77,15 +83,40 @@ export interface TimesheetRow {
   status: AttendanceStatus | 'no_show';
 }
 
-export interface OutletQrCode {
+export interface Advance {
   id: number;
-  outlet_id: number;
-  label: string;
-  token: string;
-  scan_count: number;
-  last_scanned_at: string | null;
-  is_active: boolean;
-  outlet?: Pick<Outlet, 'id' | 'name'>;
+  amount: number;
+  note: string | null;
+  given_at: string;
+}
+
+export interface PayrollMonthRow {
+  month: string;
+  base_pay: number;
+  present_days: number | null;
+  advances_total: number;
+  due: number;
+}
+
+export interface PayrollHistory {
+  staff: { id: number; name: string; staff_code: string | null; pay_type: PayType | null; pay_rate: number };
+  advances: Advance[];
+  totals: { advances_total: number; base_pay_total: number; due_total: number };
+  months: PayrollMonthRow[];
+}
+
+export interface PayrollRow {
+  user_id: number;
+  name: string;
+  staff_code: string | null;
+  outlet: Pick<Outlet, 'id' | 'name'> | null;
+  pay_type: PayType | null;
+  pay_rate: number;
+  present_days: number | null;
+  base_pay: number;
+  advances_total: number;
+  due: number;
+  advances: Advance[];
 }
 
 export interface Visitor {

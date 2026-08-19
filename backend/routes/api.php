@@ -6,8 +6,8 @@ use App\Http\Controllers\Api\Admin\FieldVisitController as AdminFieldVisitContro
 use App\Http\Controllers\Api\Admin\LabourController;
 use App\Http\Controllers\Api\Admin\LiveMonitorController;
 use App\Http\Controllers\Api\Admin\OutletController;
-use App\Http\Controllers\Api\Admin\OutletQrCodeController;
 use App\Http\Controllers\Api\Admin\PatrolController;
+use App\Http\Controllers\Api\Admin\PayrollController;
 use App\Http\Controllers\Api\Admin\ShiftController as AdminShiftController;
 use App\Http\Controllers\Api\Admin\StaffController;
 use App\Http\Controllers\Api\Admin\TimesheetController;
@@ -20,8 +20,7 @@ use App\Http\Controllers\Api\ScanController;
 use App\Http\Controllers\Api\ShiftController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/auth/staff/send-otp', [AuthController::class, 'sendOtp']);
-Route::post('/auth/staff/verify-otp', [AuthController::class, 'verifyOtp']);
+Route::post('/auth/staff/login', [AuthController::class, 'staffLogin']);
 Route::post('/auth/manager/login', [AuthController::class, 'managerLogin']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -67,10 +66,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/timesheets', [TimesheetController::class, 'index']);
 
-        Route::get('/qr-codes', [OutletQrCodeController::class, 'index']);
-        Route::post('/qr-codes', [OutletQrCodeController::class, 'store']);
-        Route::post('/qr-codes/{code}/regenerate', [OutletQrCodeController::class, 'regenerate']);
-        Route::post('/qr-codes/{code}/toggle', [OutletQrCodeController::class, 'toggle']);
+        Route::get('/payroll', [PayrollController::class, 'index']);
+        Route::get('/payroll/{staff}/history', [PayrollController::class, 'history']);
+        Route::post('/advances', [PayrollController::class, 'storeAdvance']);
+        Route::delete('/advances/{advance}', [PayrollController::class, 'destroyAdvance']);
 
         Route::get('/visitors', [VisitorController::class, 'index']);
         Route::post('/visitors', [VisitorController::class, 'store']);

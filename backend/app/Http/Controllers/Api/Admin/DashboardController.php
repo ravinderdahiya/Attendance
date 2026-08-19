@@ -14,7 +14,7 @@ class DashboardController extends Controller
         $today = now()->toDateString();
 
         $totalStaff = User::where('role', 'staff')->where('is_active', true)->count();
-        $todayRecords = AttendanceRecord::where('shift_date', $today)->get();
+        $todayRecords = AttendanceRecord::whereDate('shift_date', $today)->get();
 
         $clockedIn = $todayRecords->where('status', 'on_time')->count();
         $blocked = $todayRecords->where('status', 'blocked')->count();
@@ -23,7 +23,8 @@ class DashboardController extends Controller
         // Last 14 days on-time count, for the trend bar chart.
         $trendStart = now()->subDays(13)->toDateString();
         $trend = AttendanceRecord::selectRaw('shift_date, count(*) filter (where status = \'on_time\') as on_time_count')
-            ->whereBetween('shift_date', [$trendStart, $today])
+            ->whereDate('shift_date', '>=', $trendStart)
+            ->whereDate('shift_date', '<=', $today)
             ->groupBy('shift_date')
             ->orderBy('shift_date')
             ->get();

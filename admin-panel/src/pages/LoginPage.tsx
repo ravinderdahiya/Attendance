@@ -1,25 +1,43 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChefHat } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
+import { DEV_USERNAME, DEV_PASSWORD, SKIP_AUTOLOGIN_KEY } from '../auth/devAutoLogin';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState(DEV_USERNAME);
+  const [password, setPassword] = useState(DEV_PASSWORD);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const attemptedAutoLogin = useRef(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doLogin = async (user: string, pass: string) => {
     setError('');
     setIsSubmitting(true);
     try {
-      await login(username, password);
+      await login(user, pass);
+      sessionStorage.removeItem(SKIP_AUTOLOGIN_KEY);
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Auto-submit once on mount with the pre-filled dev credentials - but not
+  // right after an explicit logout, otherwise logout can never "stick".
+  useEffect(() => {
+    if (attemptedAutoLogin.current) return;
+    attemptedAutoLogin.current = true;
+    if (!DEV_USERNAME || !DEV_PASSWORD) return;
+    if (sessionStorage.getItem(SKIP_AUTOLOGIN_KEY)) return;
+    doLogin(DEV_USERNAME, DEV_PASSWORD);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await doLogin(username, password);
   };
 
   return (

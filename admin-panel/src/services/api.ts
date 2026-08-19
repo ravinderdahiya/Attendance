@@ -1,6 +1,6 @@
 import type {
   AppNotification, AttendanceRecord, Checkpoint, DashboardStats, FieldVisit, LabourSite, LabourWorkerRow,
-  Outlet, OutletQrCode, PatrolCheckpointStatus, Shift, StaffUser, TimesheetRow, TrendPoint, Visitor, VisitorStats,
+  Outlet, PatrolCheckpointStatus, PayrollHistory, PayrollRow, Shift, StaffUser, TimesheetRow, TrendPoint, Visitor, VisitorStats,
 } from '../types';
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8090';
@@ -74,15 +74,14 @@ export const getTimesheets = (params: { from: string; to: string; user_id?: numb
   return request<{ success: boolean; rows: TimesheetRow[] }>(`/api/admin/timesheets?${query}`);
 };
 
-// --- QR CODES ---
-export const getQrCodes = (outletId?: number) =>
-  request<{ success: boolean; codes: OutletQrCode[] }>(`/api/admin/qr-codes${outletId ? `?outlet_id=${outletId}` : ''}`);
-export const createQrCode = (payload: { outlet_id: number; label: string }) =>
-  jsonRequest<{ success: boolean; code: OutletQrCode }>('/api/admin/qr-codes', 'POST', payload);
-export const regenerateQrCode = (id: number) =>
-  jsonRequest<{ success: boolean; code: OutletQrCode }>(`/api/admin/qr-codes/${id}/regenerate`, 'POST');
-export const toggleQrCode = (id: number) =>
-  jsonRequest<{ success: boolean; code: OutletQrCode }>(`/api/admin/qr-codes/${id}/toggle`, 'POST');
+// --- PAYROLL ---
+export const getPayroll = (month?: string) =>
+  request<{ success: boolean; month: string; rows: PayrollRow[] }>(`/api/admin/payroll${month ? `?month=${month}` : ''}`);
+export const createAdvance = (payload: { user_id: number; amount: number; note?: string; given_at?: string }) =>
+  jsonRequest<{ success: boolean; advance: unknown }>('/api/admin/advances', 'POST', payload);
+export const deleteAdvance = (id: number) => jsonRequest(`/api/admin/advances/${id}`, 'DELETE');
+export const getPayrollHistory = (staffId: number) =>
+  request<{ success: boolean } & PayrollHistory>(`/api/admin/payroll/${staffId}/history`);
 
 // --- VISITOR LOG ---
 export const getVisitors = (date?: string) =>

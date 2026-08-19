@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   ChefHat, LayoutDashboard, Users, MapPin, Radar, CalendarClock, ClipboardList, LogOut,
-  QrCode, DoorOpen, ShieldCheck, HardHat, Route,
+  Wallet, DoorOpen, ShieldCheck, HardHat, Route,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 
@@ -12,11 +12,11 @@ const NAV_ITEMS = [
   { to: '/outlets', label: 'Outlets', icon: MapPin },
   { to: '/roster', label: 'Roster', icon: CalendarClock },
   { to: '/timesheets', label: 'Timesheets', icon: ClipboardList },
+  { to: '/payroll', label: 'Payroll', icon: Wallet },
   { to: '/live-monitor', label: 'Live monitor', icon: Radar },
 ];
 
 const MODULE_NAV_ITEMS = [
-  { to: '/qr-codes', label: 'QR Codes', icon: QrCode },
   { to: '/visitors', label: 'Visitor Log', icon: DoorOpen },
   { to: '/patrols', label: 'Security Patrols', icon: ShieldCheck },
   { to: '/labour', label: 'Labour Attendance', icon: HardHat },

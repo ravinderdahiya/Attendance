@@ -11,7 +11,7 @@ class LiveMonitorController extends Controller
     public function index(Request $request)
     {
         $records = AttendanceRecord::with(['user:id,name,designation,staff_code', 'outlet:id,name'])
-            ->where('shift_date', now()->toDateString())
+            ->whereDate('shift_date', now()->toDateString())
             ->when($request->query('status'), fn ($q, $status) => $q->where('status', $status))
             ->orderByDesc('clock_in_at')
             ->get();

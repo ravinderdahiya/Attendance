@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import * as api from '../services/api';
+import { SKIP_AUTOLOGIN_KEY } from './devAutoLogin';
 import type { StaffUser } from '../types';
 
 interface AuthState {
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try { await api.logout(); } catch { /* token may already be invalid */ }
     api.clearToken();
+    sessionStorage.setItem(SKIP_AUTOLOGIN_KEY, '1');
     setUser(null);
   };
 

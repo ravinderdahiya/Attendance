@@ -35,10 +35,4 @@ return [
         ],
     ],
 
-    // No SMS gateway wired up yet - set to force every OTP to this fixed code
-    // in local/dev instead of a random one, so testing doesn't need a real SMS.
-    'otp' => [
-        'static_bypass' => env('OTP_STATIC_BYPASS_CODE'),
-    ],
-
 ];

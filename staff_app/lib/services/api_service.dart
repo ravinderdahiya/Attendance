@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
@@ -71,10 +72,10 @@ class ApiService {
     return data;
   }
 
-  static Future<void> sendOtp(String mobile) => _request('POST', '/api/auth/staff/send-otp', body: {'mobile': mobile});
-
-  static Future<StaffUser> verifyOtp(String mobile, String code) async {
-    final data = await _request('POST', '/api/auth/staff/verify-otp', body: {'mobile': mobile, 'code': code});
+  /// Login with the admin-registered mobile number + the admin-set PIN -
+  /// only that pairing works, since the admin controls both.
+  static Future<StaffUser> staffLogin(String mobile, String pin) async {
+    final data = await _request('POST', '/api/auth/staff/login', body: {'mobile': mobile, 'pin': pin});
     await setToken(data['token']);
     return StaffUser.fromJson(data['user']);
   }
@@ -104,39 +105,53 @@ class ApiService {
     return items.map(AttendanceRecord.fromJson).toList();
   }
 
+  /// Multipart POST used by clock-in/out - the selfie rides alongside lat/lng
+  /// as a file field, so this can't be plain JSON like the rest of _request.
+  static Future<Map<String, dynamic>> _proofRequest(
+    String path, {
+    required double lat,
+    required double lng,
+    required File photo,
+    DateTime? occurredAt,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}$path');
+    final request = http.MultipartRequest('POST', uri);
+    final token = await getToken();
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Accept'] = 'application/json';
+    request.fields['lat'] = lat.toString();
+    request.fields['lng'] = lng.toString();
+    if (occurredAt != null) request.fields['occurred_at'] = occurredAt.toIso8601String();
+    request.files.add(await http.MultipartFile.fromPath('photo', photo.path));
+
+    final streamed = await request.send().timeout(const Duration(seconds: 30));
+    final res = await http.Response.fromStream(streamed);
+    final data = res.body.isNotEmpty ? jsonDecode(res.body) as Map<String, dynamic> : <String, dynamic>{};
+
+    if (res.statusCode >= 400) {
+      final message = data['errors'] != null
+          ? (data['errors'] as Map<String, dynamic>).values.first[0]
+          : (data['message'] ?? 'Request failed (${res.statusCode})');
+      throw ApiException(message.toString(), statusCode: res.statusCode);
+    }
+
+    return data;
+  }
+
   /// Throws ApiException with the server's message (e.g. "outside the radius")
   /// on a blocked clock-in - that's a definitive server answer, not a network
   /// problem, so callers should show it as-is rather than queue and retry.
   /// A plain (non-ApiException) throw here means the request never reached
   /// the server - that's the signal callers use to fall back to the offline
   /// queue instead.
-  static Future<AttendanceRecord> clockIn({required double lat, required double lng, DateTime? occurredAt}) async {
-    final data = await _request('POST', '/api/attendance/clock-in', auth: true, body: {
-      'lat': lat,
-      'lng': lng,
-      if (occurredAt != null) 'occurred_at': occurredAt.toIso8601String(),
-    });
+  static Future<AttendanceRecord> clockIn({required double lat, required double lng, required File photo, DateTime? occurredAt}) async {
+    final data = await _proofRequest('/api/attendance/clock-in', lat: lat, lng: lng, photo: photo, occurredAt: occurredAt);
     return AttendanceRecord.fromJson(data['record']);
   }
 
-  static Future<AttendanceRecord> clockOut({required double lat, required double lng, DateTime? occurredAt}) async {
-    final data = await _request('POST', '/api/attendance/clock-out', auth: true, body: {
-      'lat': lat,
-      'lng': lng,
-      if (occurredAt != null) 'occurred_at': occurredAt.toIso8601String(),
-    });
+  static Future<AttendanceRecord> clockOut({required double lat, required double lng, required File photo, DateTime? occurredAt}) async {
+    final data = await _proofRequest('/api/attendance/clock-out', lat: lat, lng: lng, photo: photo, occurredAt: occurredAt);
     return AttendanceRecord.fromJson(data['record']);
-  }
-
-  /// One endpoint for every printed QR code - the server figures out whether
-  /// it's an entrance code (attendance) or a patrol checkpoint and reacts
-  /// accordingly, so the app never needs to know in advance which it scanned.
-  static Future<ScanResult> scanQr(String qrToken, {DateTime? occurredAt}) async {
-    final data = await _request('POST', '/api/scan', auth: true, body: {
-      'qr_token': qrToken,
-      if (occurredAt != null) 'occurred_at': occurredAt.toIso8601String(),
-    });
-    return ScanResult.fromJson(data);
   }
 
   static Future<List<Shift>> todayShifts() async {

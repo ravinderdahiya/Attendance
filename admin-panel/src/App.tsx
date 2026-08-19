@@ -9,7 +9,7 @@ import OutletsPage from './pages/OutletsPage';
 import LiveMonitorPage from './pages/LiveMonitorPage';
 import RosterPage from './pages/RosterPage';
 import TimesheetsPage from './pages/TimesheetsPage';
-import QrCodesPage from './pages/QrCodesPage';
+import PayrollPage from './pages/PayrollPage';
 import VisitorsPage from './pages/VisitorsPage';
 import PatrolsPage from './pages/PatrolsPage';
 import LabourPage from './pages/LabourPage';
@@ -33,8 +33,8 @@ function Root() {
       <Route path="/outlets" element={<Protected><OutletsPage /></Protected>} />
       <Route path="/roster" element={<Protected><RosterPage /></Protected>} />
       <Route path="/timesheets" element={<Protected><TimesheetsPage /></Protected>} />
+      <Route path="/payroll" element={<Protected><PayrollPage /></Protected>} />
       <Route path="/live-monitor" element={<Protected><LiveMonitorPage /></Protected>} />
-      <Route path="/qr-codes" element={<Protected><QrCodesPage /></Protected>} />
       <Route path="/visitors" element={<Protected><VisitorsPage /></Protected>} />
       <Route path="/patrols" element={<Protected><PatrolsPage /></Protected>} />
       <Route path="/labour" element={<Protected><LabourPage /></Protected>} />

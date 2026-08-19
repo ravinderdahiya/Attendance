@@ -20,12 +20,14 @@ class TimesheetController extends Controller
         $to = $request->query('to', now()->endOfWeek()->toDateString());
         $userId = $request->query('user_id');
 
-        $shifts = Shift::whereBetween('shift_date', [$from, $to])
+        $shifts = Shift::whereDate('shift_date', '>=', $from)
+            ->whereDate('shift_date', '<=', $to)
             ->when($userId, fn ($q) => $q->where('user_id', $userId))
             ->get()
             ->groupBy(fn ($s) => $s->user_id.'|'.$s->shift_date->toDateString());
 
-        $attendance = AttendanceRecord::whereBetween('shift_date', [$from, $to])
+        $attendance = AttendanceRecord::whereDate('shift_date', '>=', $from)
+            ->whereDate('shift_date', '<=', $to)
             ->when($userId, fn ($q) => $q->where('user_id', $userId))
             ->get()
             ->keyBy(fn ($a) => $a->user_id.'|'.$a->shift_date->toDateString());

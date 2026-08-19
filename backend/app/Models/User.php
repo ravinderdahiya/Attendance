@@ -14,7 +14,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable([
     'role', 'name', 'mobile', 'staff_code', 'username', 'email', 'password',
-    'designation', 'department', 'outlet_id', 'is_active',
+    'designation', 'department', 'outlet_id', 'is_active', 'pay_type', 'pay_rate',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -28,6 +28,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'pay_rate' => 'decimal:2',
         ];
     }
 
@@ -44,5 +45,10 @@ class User extends Authenticatable
     public function shifts(): HasMany
     {
         return $this->hasMany(Shift::class);
+    }
+
+    public function advances(): HasMany
+    {
+        return $this->hasMany(Advance::class);
     }
 }

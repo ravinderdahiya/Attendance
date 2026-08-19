@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>ShiftTrack needs camera access to take your attendance selfie when you clock in or out.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ShiftTrack needs your location to verify you're at the outlet when clocking in or out.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
