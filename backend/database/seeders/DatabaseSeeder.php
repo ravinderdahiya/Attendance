@@ -44,7 +44,7 @@ class DatabaseSeeder extends Seeder
 
         $createdStaff = [];
         foreach ($staff as $member) {
-            $createdStaff[] = User::create([...$member, 'role' => 'staff', 'outlet_id' => $outlet->id, 'password' => '1234']);
+            $createdStaff[] = User::create([...$member, 'role' => 'staff', 'outlet_id' => $outlet->id, 'password' => '1234', 'pin' => '1234']);
         }
 
         // Today's roster - reasonable shift windows so the timesheet's

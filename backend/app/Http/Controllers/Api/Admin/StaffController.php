@@ -36,12 +36,15 @@ class StaffController extends Controller
             'outlet_id' => 'required|exists:outlets,id',
             'pay_type' => 'required|in:monthly,daily',
             'pay_rate' => 'required|numeric|min:0',
+        ], [
+            'mobile.unique' => 'This mobile number is already registered to another staff member.',
         ]);
 
         $staff = User::create([
             ...Arr::except($data, ['pin']),
             'staff_code' => $this->nextStaffCode(),
             'password' => $data['pin'], // hashed automatically by the model's 'hashed' cast
+            'pin' => $data['pin'], // plain copy so a manager can look it up later
             'role' => 'staff',
             'is_active' => true,
         ]);
@@ -76,12 +79,14 @@ class StaffController extends Controller
             'is_active' => 'sometimes|boolean',
             'pay_type' => 'sometimes|in:monthly,daily',
             'pay_rate' => 'sometimes|numeric|min:0',
+        ], [
+            'mobile.unique' => 'This mobile number is already registered to another staff member.',
         ]);
 
         if (isset($data['pin'])) {
-            $data['password'] = $data['pin'];
+            $data['password'] = $data['pin']; // hashed automatically by the model's 'hashed' cast
+            // 'pin' itself stays in $data too - plain copy so a manager can look it up later.
         }
-        unset($data['pin']);
 
         $staff->update($data);
 

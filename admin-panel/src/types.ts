@@ -24,6 +24,8 @@ export interface StaffUser {
   is_active: boolean;
   pay_type?: PayType | null;
   pay_rate?: number | null;
+  // Plain copy of the staff login PIN - lets a manager look it up if someone forgets it.
+  pin?: string | null;
 }
 
 export type AttendanceStatus = 'on_time' | 'blocked';
