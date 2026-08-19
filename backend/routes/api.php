@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance/history', [AttendanceController::class, 'history']);
     Route::get('/attendance/calendar', [AttendanceController::class, 'calendar']);
     Route::get('/attendance/analytics', [AttendanceController::class, 'analytics']);
+    Route::get('/attendance/monthly-status', [AttendanceController::class, 'monthlyStatus']);
     Route::post('/attendance/clock-in', [AttendanceController::class, 'clockIn']);
     Route::post('/attendance/clock-out', [AttendanceController::class, 'clockOut']);
 
@@ -65,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/shifts/{shift}', [AdminShiftController::class, 'destroy']);
 
         Route::get('/timesheets', [TimesheetController::class, 'index']);
+        Route::get('/timesheets/monthly-summary', [TimesheetController::class, 'monthlySummary']);
 
         Route::get('/payroll', [PayrollController::class, 'index']);
         Route::get('/payroll/{staff}/history', [PayrollController::class, 'history']);

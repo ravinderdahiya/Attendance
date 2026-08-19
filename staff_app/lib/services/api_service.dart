@@ -169,6 +169,11 @@ class ApiService {
     return Analytics.fromJson(data);
   }
 
+  static Future<MonthlyStatus> monthlyStatus() async {
+    final data = await _request('GET', '/api/attendance/monthly-status', auth: true);
+    return MonthlyStatus.fromJson(data);
+  }
+
   static Future<List<AppNotification>> notifications() async {
     final data = await _request('GET', '/api/notifications', auth: true);
     return (data['notifications'] as List).cast<Map<String, dynamic>>().map(AppNotification.fromJson).toList();

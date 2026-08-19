@@ -69,6 +69,19 @@ export interface Shift {
   outlet?: Pick<Outlet, 'id' | 'name'>;
 }
 
+export interface MonthlySummaryRow {
+  user_id: number;
+  name: string;
+  staff_code: string | null;
+  designation: string | null;
+  scheduled_days: number;
+  present_days: number;
+  leave_days: number;
+  late_days: number;
+  worked_hours: number;
+  overtime_hours: number;
+}
+
 export interface TimesheetRow {
   user_id: number;
   name: string;

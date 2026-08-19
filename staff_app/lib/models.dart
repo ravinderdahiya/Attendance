@@ -133,6 +133,20 @@ class Analytics {
       );
 }
 
+class MonthlyStatus {
+  final int present;
+  final int absent;
+  final int late;
+
+  MonthlyStatus({required this.present, required this.absent, required this.late});
+
+  factory MonthlyStatus.fromJson(Map<String, dynamic> json) => MonthlyStatus(
+        present: json['present'],
+        absent: json['absent'],
+        late: json['late'],
+      );
+}
+
 class AppNotification {
   final int id;
   final String type; // clock_in | blocked | streak

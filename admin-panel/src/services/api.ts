@@ -1,6 +1,7 @@
 import type {
   AppNotification, AttendanceRecord, Checkpoint, DashboardStats, FieldVisit, LabourSite, LabourWorkerRow,
-  Outlet, PatrolCheckpointStatus, PayrollHistory, PayrollRow, Shift, StaffUser, TimesheetRow, TrendPoint, Visitor, VisitorStats,
+  MonthlySummaryRow, Outlet, PatrolCheckpointStatus, PayrollHistory, PayrollRow, Shift, StaffUser, TimesheetRow, TrendPoint,
+  Visitor, VisitorStats,
 } from '../types';
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8090';
@@ -73,6 +74,8 @@ export const getTimesheets = (params: { from: string; to: string; user_id?: numb
   const query = new URLSearchParams(params as any).toString();
   return request<{ success: boolean; rows: TimesheetRow[] }>(`/api/admin/timesheets?${query}`);
 };
+export const getMonthlySummary = (month: string) =>
+  request<{ success: boolean; month: string; rows: MonthlySummaryRow[] }>(`/api/admin/timesheets/monthly-summary?month=${month}`);
 
 // --- PAYROLL ---
 export const getPayroll = (month?: string) =>

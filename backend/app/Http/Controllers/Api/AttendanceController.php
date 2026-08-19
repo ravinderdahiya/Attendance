@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceRecord;
+use App\Models\Shift;
 use App\Models\ShiftNotification;
 use App\Support\Geo;
 use Carbon\Carbon;
@@ -13,6 +14,9 @@ use Illuminate\Validation\ValidationException;
 
 class AttendanceController extends Controller
 {
+    // Matches the admin timesheet's late-arrival grace window.
+    private const LATE_GRACE_MINUTES = 10;
+
     /** Today's attendance status for the logged-in staff member's dashboard card. */
     public function today(Request $request)
     {
@@ -58,6 +62,60 @@ class AttendanceController extends Controller
         }
 
         return response()->json(['success' => true, 'days' => $days]);
+    }
+
+    /**
+     * Present/absent/late counts for the current calendar month, for the
+     * staff app's home screen ("Your current month status" cards).
+     */
+    public function monthlyStatus(Request $request)
+    {
+        $userId = $request->user()->id;
+        $start = now()->startOfMonth();
+        $end = now()->endOfMonth();
+
+        $shifts = Shift::where('user_id', $userId)
+            ->whereDate('shift_date', '>=', $start)
+            ->whereDate('shift_date', '<=', $end)
+            ->get()
+            ->keyBy(fn ($s) => $s->shift_date->toDateString());
+
+        $attendance = AttendanceRecord::where('user_id', $userId)
+            ->whereDate('shift_date', '>=', $start)
+            ->whereDate('shift_date', '<=', $end)
+            ->get();
+        $attendanceByDate = $attendance->keyBy(fn ($a) => $a->shift_date->toDateString());
+
+        // Present = any day this month with a genuine on-site clock-in - counted
+        // from actual attendance, whether or not a shift happened to be
+        // scheduled for that day (a punch-in should always count as showing up).
+        $present = $attendance->where('status', 'on_time')->whereNotNull('clock_in_at')->count();
+
+        // Late only makes sense against a scheduled start time, so it's still
+        // computed per shift day.
+        $late = 0;
+        foreach ($shifts as $date => $shift) {
+            $record = $attendanceByDate->get($date);
+            if ($record?->status === 'on_time' && $record->clock_in_at) {
+                $shiftStart = Carbon::parse($date.' '.$shift->start_time);
+                if ($record->clock_in_at->gt($shiftStart)
+                    && $shiftStart->diffInMinutes($record->clock_in_at) > self::LATE_GRACE_MINUTES) {
+                    $late++;
+                }
+            }
+        }
+
+        // Absent = scheduled shift day, already past, never clocked in at all -
+        // can't be "absent" from a day nothing was scheduled.
+        $absent = 0;
+        foreach ($shifts as $date => $shift) {
+            $record = $attendanceByDate->get($date);
+            if (! $record?->clock_in_at && Carbon::parse($date)->lt(now()->startOfDay())) {
+                $absent++;
+            }
+        }
+
+        return response()->json(['success' => true, 'present' => $present, 'absent' => $absent, 'late' => $late]);
     }
 
     /** On-time rate, weekly pattern, and shift counts for the staff app's analytics screen. */

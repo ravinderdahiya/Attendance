@@ -13,8 +13,8 @@ class QueuedEvent {
   final double? lng;
   final DateTime occurredAt;
   // Path to the selfie copied into app storage at capture time (see
-  // ClockInScreen) - it has to survive on-device until sync, which may be
-  // long after the original camera temp file is gone.
+  // AttendancePunchService) - it has to survive on-device until sync, which
+  // may be long after the original camera temp file is gone.
   final String photoPath;
 
   QueuedEvent({required this.type, required this.occurredAt, required this.photoPath, this.lat, this.lng});

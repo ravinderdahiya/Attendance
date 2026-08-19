@@ -5,7 +5,6 @@ import '../models.dart';
 import '../services/offline_queue_service.dart';
 import '../theme.dart';
 import 'dashboard_screen.dart';
-import 'clock_in_screen.dart';
 import 'history_screen.dart';
 import 'analytics_screen.dart';
 import 'profile_screen.dart';
@@ -46,7 +45,6 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final tabs = [
       DashboardScreen(user: widget.user),
-      const ClockInScreen(),
       const HistoryScreen(),
       const AnalyticsScreen(),
       ProfileScreen(user: widget.user),
@@ -62,7 +60,6 @@ class _HomeShellState extends State<HomeShell> {
         indicatorColor: AppColors.terra.withValues(alpha: 0.1),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home, color: AppColors.terra), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.location_on_outlined), selectedIcon: Icon(Icons.location_on, color: AppColors.terra), label: 'Clock-in'),
           NavigationDestination(icon: Icon(Icons.history), selectedIcon: Icon(Icons.history, color: AppColors.terra), label: 'History'),
           NavigationDestination(icon: Icon(Icons.bar_chart_outlined), selectedIcon: Icon(Icons.bar_chart, color: AppColors.terra), label: 'Reports'),
           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person, color: AppColors.terra), label: 'Profile'),
