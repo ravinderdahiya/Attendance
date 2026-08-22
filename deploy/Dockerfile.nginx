@@ -4,6 +4,9 @@ WORKDIR /app
 COPY website/package.json website/package-lock.json ./
 RUN npm ci
 COPY website/ ./
+# The "Admin Login" links default to the local dev admin-panel port -
+# point them at the same-origin /admin/ path served alongside this site.
+ENV VITE_ADMIN_URL=/admin/
 RUN npm run build
 
 FROM node:20-bookworm-slim AS admin-build
