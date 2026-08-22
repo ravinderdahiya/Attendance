@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  ChefHat, LayoutDashboard, Users, MapPin, Radar, CalendarClock, ClipboardList, LogOut,
+  LayoutDashboard, Users, MapPin, Radar, CalendarClock, ClipboardList, LogOut,
   Wallet, DoorOpen, ShieldCheck, HardHat, Route,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
@@ -46,9 +46,9 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex bg-paper">
       <aside className="w-56 shrink-0 bg-gradient-to-b from-[#0A0912] to-terra-deep text-white p-5 flex flex-col overflow-y-auto">
-        <div className="flex items-center gap-2 font-extrabold text-sm">
-          <ChefHat className="w-[18px] h-[18px] text-gold" />
-          ShiftTrack
+        <div>
+          <img src="/brand/logo.png" alt="म्हारी ढाणी" className="h-10 w-auto max-w-full object-contain" />
+          <div className="text-[10px] font-bold text-white/55 tracking-wide mt-1.5">Manager panel</div>
         </div>
         <nav className="mt-7 flex flex-col gap-0.5">
           {NAV_ITEMS.map((item) => <NavItem key={item.to} {...item} />)}
@@ -64,7 +64,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </button>
       </aside>
 
-      <main className="flex-1 min-w-0 p-7">
+      <main className="flex-1 min-w-0 p-7 bg-paper">
         {user && <div className="text-[11px] font-semibold text-text-mute mb-3">Signed in as {user.name}</div>}
         {children}
       </main>

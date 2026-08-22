@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $outlet = Outlet::create([
-            'name' => 'Spice Route Kitchen',
+            'name' => 'Mhari Dhani',
             'address' => 'Sector 15, Hisar',
             'latitude' => 29.1492,
             'longitude' => 75.7217,

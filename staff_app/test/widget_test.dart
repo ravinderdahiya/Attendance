@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shifttrack_staff/main.dart';
 
 void main() {
-  testWidgets('App boots to the login screen', (WidgetTester tester) async {
-    await tester.pumpWidget(const ShiftTrackApp());
+  testWidgets('App boots to the splash screen', (WidgetTester tester) async {
+    await tester.pumpWidget(const MhariDhaniApp());
     await tester.pump();
 
-    expect(find.text('ShiftTrack'), findsOneWidget);
+    expect(find.text("Clocked in only when you're on-site"), findsOneWidget);
   });
 }

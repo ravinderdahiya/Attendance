@@ -15,7 +15,7 @@ class Shift extends Model
     protected function casts(): array
     {
         return [
-            'shift_date' => 'date',
+            'shift_date' => 'date:Y-m-d',
         ];
     }
 

@@ -44,6 +44,8 @@ class ShiftController extends Controller
     public function update(Request $request, Shift $shift)
     {
         $data = $request->validate([
+            'user_id' => 'sometimes|exists:users,id',
+            'outlet_id' => 'sometimes|exists:outlets,id',
             'shift_date' => 'sometimes|date',
             'start_time' => 'sometimes|date_format:H:i',
             'end_time' => 'sometimes|date_format:H:i|after:start_time',

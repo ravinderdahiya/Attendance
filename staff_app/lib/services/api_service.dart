@@ -112,6 +112,7 @@ class ApiService {
     required double lat,
     required double lng,
     required File photo,
+    required double faceConfidence,
     DateTime? occurredAt,
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}$path');
@@ -121,6 +122,7 @@ class ApiService {
     request.headers['Accept'] = 'application/json';
     request.fields['lat'] = lat.toString();
     request.fields['lng'] = lng.toString();
+    request.fields['face_confidence'] = faceConfidence.toString();
     if (occurredAt != null) request.fields['occurred_at'] = occurredAt.toIso8601String();
     request.files.add(await http.MultipartFile.fromPath('photo', photo.path));
 
@@ -144,14 +146,48 @@ class ApiService {
   /// A plain (non-ApiException) throw here means the request never reached
   /// the server - that's the signal callers use to fall back to the offline
   /// queue instead.
-  static Future<AttendanceRecord> clockIn({required double lat, required double lng, required File photo, DateTime? occurredAt}) async {
-    final data = await _proofRequest('/api/attendance/clock-in', lat: lat, lng: lng, photo: photo, occurredAt: occurredAt);
+  static Future<AttendanceRecord> clockIn({required double lat, required double lng, required File photo, required double faceConfidence, DateTime? occurredAt}) async {
+    final data = await _proofRequest('/api/attendance/clock-in', lat: lat, lng: lng, photo: photo, faceConfidence: faceConfidence, occurredAt: occurredAt);
     return AttendanceRecord.fromJson(data['record']);
   }
 
-  static Future<AttendanceRecord> clockOut({required double lat, required double lng, required File photo, DateTime? occurredAt}) async {
-    final data = await _proofRequest('/api/attendance/clock-out', lat: lat, lng: lng, photo: photo, occurredAt: occurredAt);
+  static Future<AttendanceRecord> clockOut({required double lat, required double lng, required File photo, required double faceConfidence, DateTime? occurredAt}) async {
+    final data = await _proofRequest('/api/attendance/clock-out', lat: lat, lng: lng, photo: photo, faceConfidence: faceConfidence, occurredAt: occurredAt);
     return AttendanceRecord.fromJson(data['record']);
+  }
+
+  /// Uploads the enrolled reference selfie + its on-device embedding. Sent as
+  /// bracketed `embedding[i]` fields (not a JSON string) so Laravel parses it
+  /// as an array for validation.
+  static Future<StaffUser> enrollFace({required File photo, required List<double> embedding}) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/face/enroll');
+    final request = http.MultipartRequest('POST', uri);
+    final token = await getToken();
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Accept'] = 'application/json';
+    for (var i = 0; i < embedding.length; i++) {
+      request.fields['embedding[$i]'] = embedding[i].toString();
+    }
+    request.files.add(await http.MultipartFile.fromPath('photo', photo.path));
+
+    final streamed = await request.send().timeout(const Duration(seconds: 30));
+    final res = await http.Response.fromStream(streamed);
+    final data = res.body.isNotEmpty ? jsonDecode(res.body) as Map<String, dynamic> : <String, dynamic>{};
+    if (res.statusCode >= 400) {
+      final message = data['errors'] != null
+          ? (data['errors'] as Map<String, dynamic>).values.first[0]
+          : (data['message'] ?? 'Request failed (${res.statusCode})');
+      throw ApiException(message.toString(), statusCode: res.statusCode);
+    }
+    return StaffUser.fromJson(data['user']);
+  }
+
+  /// Backfills the local embedding cache on a reinstall - null if this
+  /// account has never enrolled a face.
+  static Future<List<double>?> fetchFaceReference() async {
+    final data = await _request('GET', '/api/face/reference', auth: true);
+    if (data['enrolled'] != true || data['embedding'] == null) return null;
+    return (data['embedding'] as List).map((e) => (e as num).toDouble()).toList();
   }
 
   static Future<List<Shift>> todayShifts() async {

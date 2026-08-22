@@ -30,3 +30,24 @@ body {
   color: var(--color-ink-900);
   font-family: var(--font-sans);
 }
+
+.font-hindi {
+  font-family: 'Noto Sans Devanagari', var(--font-sans);
+}
+
+.font-yatra {
+  font-family: 'Yatra One', cursive;
+}
+
+.font-kalam {
+  font-family: 'Kalam', cursive;
+}
+
+@keyframes ken {
+  from { transform: scale(1.02); }
+  to { transform: scale(1.10); }
+}
+
+.animate-ken {
+  animation: ken 18s ease-out forwards;
+}

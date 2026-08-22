@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
@@ -72,6 +71,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Punches in or out - whichever the current record calls for - reusing
   /// the same GPS+selfie proof and offline-queue fallback as the Clock-in tab.
   Future<void> _handlePunch() async {
+    if (!widget.user.faceEnrolled) {
+      setState(() { _punchError = 'Enroll your face in Profile before clocking in.'; });
+      return;
+    }
+
     final clockingOut = _isOnActiveShift;
     setState(() { _punchStatus = _PunchStatus.working; _punchError = null; });
 
@@ -84,9 +88,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     if (!mounted) return;
-    late final File photo;
+    late final PunchCapture capture;
     try {
-      photo = await AttendancePunchService.capturePhoto(context, isClockingOut: clockingOut);
+      capture = await AttendancePunchService.capturePhoto(context, isClockingOut: clockingOut);
     } catch (e) {
       setState(() { _punchStatus = _PunchStatus.idle; _punchError = e.toString().replaceFirst('Exception: ', ''); });
       return;
@@ -94,8 +98,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     try {
       final record = clockingOut
-          ? await ApiService.clockOut(lat: position.latitude, lng: position.longitude, photo: photo)
-          : await ApiService.clockIn(lat: position.latitude, lng: position.longitude, photo: photo);
+          ? await ApiService.clockOut(lat: position.latitude, lng: position.longitude, photo: capture.photo, faceConfidence: capture.faceConfidence)
+          : await ApiService.clockIn(lat: position.latitude, lng: position.longitude, photo: capture.photo, faceConfidence: capture.faceConfidence);
       setState(() { _today = record; _punchStatus = _PunchStatus.idle; });
       ApiService.monthlyStatus().then((s) { if (mounted) setState(() => _monthlyStatus = s); }).catchError((_) {});
     } on ApiException catch (e) {
@@ -104,7 +108,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await OfflineQueueService.enqueue(QueuedEvent(
         type: clockingOut ? QueuedEventType.clockOut : QueuedEventType.clockIn,
         lat: position.latitude, lng: position.longitude,
-        occurredAt: DateTime.now(), photoPath: photo.path,
+        occurredAt: DateTime.now(), photoPath: capture.photo.path, faceConfidence: capture.faceConfidence,
       ));
       setState(() {
         _punchStatus = _PunchStatus.idle;

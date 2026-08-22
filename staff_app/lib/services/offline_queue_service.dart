@@ -16,8 +16,11 @@ class QueuedEvent {
   // AttendancePunchService) - it has to survive on-device until sync, which
   // may be long after the original camera temp file is gone.
   final String photoPath;
+  // Face-match confidence already computed on-device at capture time (see
+  // CameraCaptureScreen) - matching never happens again at sync time.
+  final double faceConfidence;
 
-  QueuedEvent({required this.type, required this.occurredAt, required this.photoPath, this.lat, this.lng});
+  QueuedEvent({required this.type, required this.occurredAt, required this.photoPath, required this.faceConfidence, this.lat, this.lng});
 
   Map<String, dynamic> toJson() => {
         'type': switch (type) { QueuedEventType.clockIn => 'in', QueuedEventType.clockOut => 'out' },
@@ -25,6 +28,7 @@ class QueuedEvent {
         'lng': lng,
         'occurred_at': occurredAt.toIso8601String(),
         'photo_path': photoPath,
+        'face_confidence': faceConfidence,
       };
 
   factory QueuedEvent.fromJson(Map<String, dynamic> json) => QueuedEvent(
@@ -33,6 +37,7 @@ class QueuedEvent {
         lng: (json['lng'] as num?)?.toDouble(),
         occurredAt: DateTime.parse(json['occurred_at']),
         photoPath: json['photo_path'],
+        faceConfidence: (json['face_confidence'] as num?)?.toDouble() ?? 0,
       );
 }
 
@@ -82,9 +87,9 @@ class OfflineQueueService {
       try {
         switch (event.type) {
           case QueuedEventType.clockIn:
-            await ApiService.clockIn(lat: event.lat!, lng: event.lng!, photo: photo, occurredAt: event.occurredAt);
+            await ApiService.clockIn(lat: event.lat!, lng: event.lng!, photo: photo, faceConfidence: event.faceConfidence, occurredAt: event.occurredAt);
           case QueuedEventType.clockOut:
-            await ApiService.clockOut(lat: event.lat!, lng: event.lng!, photo: photo, occurredAt: event.occurredAt);
+            await ApiService.clockOut(lat: event.lat!, lng: event.lng!, photo: photo, faceConfidence: event.faceConfidence, occurredAt: event.occurredAt);
         }
         synced++;
         unawaited(photo.delete().catchError((_) => photo));

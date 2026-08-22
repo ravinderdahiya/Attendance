@@ -1,17 +1,32 @@
 import 'package:flutter/material.dart';
 import '../models.dart';
 import '../services/api_service.dart';
+import '../services/face_profile_service.dart';
 import '../theme.dart';
+import 'face_enrollment_screen.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final StaffUser user;
-  const ProfileScreen({super.key, required this.user});
+  final ValueChanged<StaffUser> onUserUpdated;
+  const ProfileScreen({super.key, required this.user, required this.onUserUpdated});
 
   Future<void> _logout(BuildContext context) async {
     await ApiService.logout();
+    await FaceProfileService.clear();
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
+  }
+
+  Future<void> _enrollFace(BuildContext context) async {
+    final enrolled = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => const FaceEnrollmentScreen()));
+    if (enrolled != true) return;
+    try {
+      onUserUpdated(await ApiService.me());
+    } catch (_) {
+      // Enrollment already succeeded server-side - the flag will catch up
+      // next time `me()` is fetched (e.g. next app launch).
+    }
   }
 
   @override
@@ -50,6 +65,16 @@ class ProfileScreen extends StatelessWidget {
             children: [
               _row(Icons.apartment_outlined, user.outlet?.name ?? 'No outlet assigned'),
               _row(Icons.badge_outlined, user.department ?? 'No department'),
+              const Divider(color: AppColors.line),
+              ListTile(
+                leading: Icon(user.faceEnrolled ? Icons.verified_user : Icons.face_retouching_natural, color: AppColors.terra),
+                title: Text(
+                  user.faceEnrolled ? 'Face ID enrolled - tap to re-enroll' : 'Enroll Face ID',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+                ),
+                trailing: const Icon(Icons.chevron_right, size: 18, color: AppColors.textMute),
+                onTap: () => _enrollFace(context),
+              ),
               const Divider(color: AppColors.line),
               ListTile(
                 leading: const Icon(Icons.logout, color: AppColors.terra),

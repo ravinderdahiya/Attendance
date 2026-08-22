@@ -33,6 +33,7 @@ class StaffUser {
   final String? designation;
   final String? department;
   final Outlet? outlet;
+  final bool faceEnrolled;
 
   StaffUser({
     required this.id,
@@ -42,6 +43,7 @@ class StaffUser {
     required this.designation,
     required this.department,
     required this.outlet,
+    required this.faceEnrolled,
   });
 
   factory StaffUser.fromJson(Map<String, dynamic> json) => StaffUser(
@@ -52,6 +54,7 @@ class StaffUser {
         designation: json['designation'],
         department: json['department'],
         outlet: json['outlet'] != null ? Outlet.fromJson(json['outlet']) : null,
+        faceEnrolled: json['face_enrolled'] == true,
       );
 }
 

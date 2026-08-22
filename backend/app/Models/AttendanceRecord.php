@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'user_id', 'outlet_id', 'shift_date',
-    'clock_in_at', 'clock_in_lat', 'clock_in_lng', 'clock_in_distance_m', 'status', 'clock_in_method', 'clock_in_photo',
-    'clock_out_at', 'clock_out_lat', 'clock_out_lng', 'clock_out_method', 'clock_out_photo', 'synced_offline',
+    'clock_in_at', 'clock_in_lat', 'clock_in_lng', 'clock_in_distance_m', 'status', 'clock_in_method', 'clock_in_photo', 'clock_in_face_confidence',
+    'clock_out_at', 'clock_out_lat', 'clock_out_lng', 'clock_out_method', 'clock_out_photo', 'clock_out_face_confidence', 'synced_offline',
 ])]
 class AttendanceRecord extends Model
 {
@@ -29,6 +29,8 @@ class AttendanceRecord extends Model
             'clock_in_lng' => 'float',
             'clock_out_lat' => 'float',
             'clock_out_lng' => 'float',
+            'clock_in_face_confidence' => 'float',
+            'clock_out_face_confidence' => 'float',
             'synced_offline' => 'boolean',
         ];
     }

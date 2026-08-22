@@ -2,12 +2,15 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import '../services/face_profile_service.dart';
+import '../services/face_recognition_service.dart';
 import '../theme.dart';
 
 /// Small in-app camera preview shown as a dialog over whatever screen asked
-/// for the attendance selfie - a single button captures the live frame and
-/// submits it in one tap, so this never hands off to the phone's separate
-/// camera app.
+/// for the attendance selfie - a single button captures the live frame,
+/// verifies it's the enrolled staff member's own face (on-device, see
+/// FaceRecognitionService), and submits it in one tap, so this never hands
+/// off to the phone's separate camera app.
 class CameraCaptureScreen extends StatefulWidget {
   final bool isClockingOut;
   const CameraCaptureScreen({super.key, required this.isClockingOut});
@@ -57,14 +60,35 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized || _isCapturing) return;
     setState(() { _isCapturing = true; _error = null; });
+
+    late final File photo;
     try {
       final shot = await controller.takePicture();
       final dir = await getApplicationDocumentsDirectory();
       final dest = '${dir.path}/attendance_${DateTime.now().microsecondsSinceEpoch}.jpg';
       await File(shot.path).copy(dest);
-      if (mounted) Navigator.of(context).pop(dest);
+      photo = File(dest);
     } catch (_) {
       if (mounted) setState(() { _error = 'Could not capture the photo - try again.'; _isCapturing = false; });
+      return;
+    }
+
+    try {
+      final service = FaceRecognitionService.instance;
+      final face = await service.detectSingleFace(photo);
+      final embedding = await service.computeEmbedding(photo, face);
+      final reference = await FaceProfileService.ensureLoaded();
+      if (reference == null) {
+        throw Exception('Face not enrolled - go to Profile > Enroll Face ID first.');
+      }
+      final confidence = service.cosineSimilarity(embedding, reference);
+      if (confidence < FaceRecognitionService.matchThreshold) {
+        throw Exception("Face doesn't match your enrolled profile - try again.");
+      }
+
+      if (mounted) Navigator.of(context).pop({'path': photo.path, 'confidence': confidence});
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString().replaceFirst('Exception: ', ''); _isCapturing = false; });
     }
   }
 

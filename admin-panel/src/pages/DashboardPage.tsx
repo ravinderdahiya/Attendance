@@ -21,7 +21,7 @@ export default function DashboardPage() {
     <div className="space-y-5">
       <div>
         <h1 className="font-extrabold text-xl text-ink-900">Dashboard</h1>
-        <p className="text-xs text-ink-600 font-semibold mt-1">Spice Route Kitchen — Sector 15, Hisar</p>
+        <p className="text-xs text-ink-600 font-semibold mt-1">म्हारी ढाणी · Mhari Dhani</p>
       </div>
 
       {error && <p className="text-xs font-semibold text-coral-deep bg-coral-bg rounded-lg px-3 py-2">{error}</p>}

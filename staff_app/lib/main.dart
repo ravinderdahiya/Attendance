@@ -3,16 +3,16 @@ import 'screens/splash_screen.dart';
 import 'theme.dart';
 
 void main() {
-  runApp(const ShiftTrackApp());
+  runApp(const MhariDhaniApp());
 }
 
-class ShiftTrackApp extends StatelessWidget {
-  const ShiftTrackApp({super.key});
+class MhariDhaniApp extends StatelessWidget {
+  const MhariDhaniApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ShiftTrack',
+      title: 'Mhari Dhani',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

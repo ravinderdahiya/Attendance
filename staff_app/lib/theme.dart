@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Colors lifted from the ShiftTrack mockup's :root CSS variables.
+/// Colors lifted from the Mhari Dhani admin panel :root CSS variables.
 class AppColors {
   static const terra = Color(0xFF232130);
   static const terraDeep = Color(0xFF131019);

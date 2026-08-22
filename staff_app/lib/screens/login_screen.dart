@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme.dart';
+import '../widgets/brand_backdrop.dart';
 import 'home_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,6 +16,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _pinController = TextEditingController();
   bool _isSubmitting = false;
   String? _error;
+
+  @override
+  void dispose() {
+    _mobileController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
 
   Future<void> _login() async {
     if (_mobileController.text.trim().isEmpty || _pinController.text.trim().isEmpty) return;
@@ -33,60 +41,85 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.paper,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Sign in to ShiftTrack',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: AppColors.terraDeep)),
-              const SizedBox(height: 8),
-              const Text(
-                'Enter your registered mobile number and PIN',
-                style: TextStyle(color: AppColors.textMute, fontWeight: FontWeight.w600, fontSize: 13),
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _mobileController,
-                keyboardType: TextInputType.phone,
-                decoration: _fieldDecoration('Mobile number'),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _pinController,
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                maxLength: 4,
-                decoration: _fieldDecoration('4-digit PIN').copyWith(counterText: ''),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: AppColors.coralBg, borderRadius: BorderRadius.circular(10)),
-                  child: Text(_error!, style: const TextStyle(color: AppColors.coralDeep, fontSize: 12, fontWeight: FontWeight.w600)),
-                ),
-              ],
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.terra,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: AppColors.terraDeep,
+      body: BrandAtmosphere(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 48),
+            child: Center(
+              child: SingleChildScrollView(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.97),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 8))],
                   ),
-                  child: Text(
-                    _isSubmitting ? 'Please wait…' : 'Sign in',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF121216),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Image.asset(
+                          BrandAssets.logo,
+                          height: 48,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Staff sign in',
+                        style: TextStyle(color: AppColors.textMute, fontWeight: FontWeight.w600, fontSize: 12),
+                      ),
+                      const SizedBox(height: 18),
+                      TextField(
+                        controller: _mobileController,
+                        keyboardType: TextInputType.phone,
+                        decoration: _fieldDecoration('Mobile number'),
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        controller: _pinController,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        maxLength: 4,
+                        decoration: _fieldDecoration('4-digit PIN').copyWith(counterText: ''),
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 14),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: AppColors.coralBg, borderRadius: BorderRadius.circular(10)),
+                          child: Text(_error!, style: const TextStyle(color: AppColors.coralDeep, fontSize: 12, fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _isSubmitting ? null : _login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.terra,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(
+                            _isSubmitting ? 'Please wait…' : 'Sign in',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

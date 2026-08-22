@@ -19,6 +19,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  late StaffUser _user = widget.user;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   @override
@@ -44,10 +45,10 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final tabs = [
-      DashboardScreen(user: widget.user),
+      DashboardScreen(user: _user),
       const HistoryScreen(),
       const AnalyticsScreen(),
-      ProfileScreen(user: widget.user),
+      ProfileScreen(user: _user, onUserUpdated: (u) => setState(() => _user = u)),
     ];
 
     return Scaffold(

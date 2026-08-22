@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Admin\TimesheetController;
 use App\Http\Controllers\Api\Admin\VisitorController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\FaceController;
 use App\Http\Controllers\Api\FieldVisitController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ScanController;
@@ -34,6 +35,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance/monthly-status', [AttendanceController::class, 'monthlyStatus']);
     Route::post('/attendance/clock-in', [AttendanceController::class, 'clockIn']);
     Route::post('/attendance/clock-out', [AttendanceController::class, 'clockOut']);
+
+    Route::post('/face/enroll', [FaceController::class, 'enroll']);
+    Route::get('/face/reference', [FaceController::class, 'reference']);
 
     Route::post('/scan', [ScanController::class, 'scan']);
 

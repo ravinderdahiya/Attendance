@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Shifttrack Staff</string>
+	<string>Mhari Dhani</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,9 +27,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>ShiftTrack needs camera access to take your attendance selfie when you clock in or out.</string>
+	<string>Mhari Dhani needs camera access to take your attendance selfie when you clock in or out.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>ShiftTrack needs your location to verify you're at the outlet when clocking in or out.</string>
+	<string>Mhari Dhani needs your location to verify you're at the outlet when clocking in or out.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

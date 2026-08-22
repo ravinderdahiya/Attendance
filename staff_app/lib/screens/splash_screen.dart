@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme.dart';
+import '../widgets/brand_backdrop.dart';
 import 'login_screen.dart';
 import 'home_shell.dart';
 
@@ -51,28 +52,23 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF3B3849), AppColors.terra, AppColors.terraDeep],
-          ),
-        ),
+      backgroundColor: AppColors.terraDeep,
+      body: BrandAtmosphere(
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-                child: Icon(Icons.restaurant, color: AppColors.terra, size: 28),
+              Image.asset(
+                BrandAssets.logo,
+                height: 56,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const BrandName(),
               ),
               const SizedBox(height: 16),
-              const Text('ShiftTrack', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 20)),
-              const SizedBox(height: 6),
-              Text("Clocked in only when you're on-site", style: TextStyle(color: Colors.white.withValues(alpha: 0.78), fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(
+                "Clocked in only when you're on-site",
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.78), fontSize: 12, fontWeight: FontWeight.w600),
+              ),
               if (_retryError != null) ...[
                 const SizedBox(height: 24),
                 Text(_retryError!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),

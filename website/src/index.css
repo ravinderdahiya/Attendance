@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: 'Yatra One', cursive;
+  --font-hindi: 'Yatra One', 'Noto Serif Devanagari', serif;
+  --font-sans: 'Work Sans', ui-sans-serif, sans-serif;
+  --font-kalam: 'Kalam', cursive;
+
+  --color-ink: #131019;
+  --color-ink-soft: #232130;
+  --color-cream: #f4ede1;
+  --color-cream-deep: #ece2d0;
+  --color-wood: #c89b5c;
+  --color-gold: #d9a441;
+  --color-gold-deep: #8a6234;
+  --color-coral: #E2637E;
+  --color-coral-dim: #c04f66;
+  --color-muted: #a79fae;
+  --color-line: #3a3648;
+
+  --color-ink: #14110E;
+  --color-ink-soft: #2A241C;
+  --color-cream: #F6F0E6;
+  --color-cream-deep: #E8DCC8;
+  --color-wood: #C4A574;
+  --color-gold: #D4AF77;
+  --color-gold-deep: #9C7A3C;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-cream);
+  font-family: var(--font-sans);
+}
+
+.font-display { font-family: var(--font-display); }
+.font-hindi { font-family: var(--font-hindi); }
+.font-kalam { font-family: var(--font-kalam); }
+
+@keyframes ken {
+  from { transform: scale(1.02); }
+  to { transform: scale(1.12); }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: none; }
+}
+
+.animate-ken {
+  animation: ken 14s ease-out forwards;
+}
+
+.animate-rise {
+  animation: rise 0.9s ease-out both;
+}
+
+.gold-rule {
+  width: 52px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+}
+
+.gold-rule-left {
+  width: 52px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-gold), transparent);
+}

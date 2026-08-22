@@ -17,6 +17,13 @@ class AttendanceController extends Controller
     // Matches the admin timesheet's late-arrival grace window.
     private const LATE_GRACE_MINUTES = 10;
 
+    // Mirrors the app-side threshold in FaceRecognitionService - this is
+    // defense-in-depth, not the primary check. The real match runs on-device;
+    // the server just refuses to trust a confidence a legitimate client
+    // would never have reported. GPS and the stored photo remain independent
+    // server-verified evidence regardless of what a client claims here.
+    private const FACE_MATCH_THRESHOLD = 0.65;
+
     /** Today's attendance status for the logged-in staff member's dashboard card. */
     public function today(Request $request)
     {
@@ -149,7 +156,7 @@ class AttendanceController extends Controller
         ]);
     }
 
-    /** GPS-based clock-in - the only way to mark attendance, always geofenced. */
+    /** GPS-based clock-in, always geofenced, plus an on-device face match against the staff member's enrolled reference. */
     public function clockIn(Request $request)
     {
         $data = $this->validateProof($request);
@@ -158,6 +165,12 @@ class AttendanceController extends Controller
         $outlet = $user->outlet;
         if (! $outlet) {
             throw ValidationException::withMessages(['outlet' => 'No outlet assigned to this account - contact your manager.']);
+        }
+        if (! $user->face_enrolled) {
+            throw ValidationException::withMessages(['face' => 'Enroll your face before clocking in - go to Profile > Enroll Face ID.']);
+        }
+        if ($data['face_confidence'] < self::FACE_MATCH_THRESHOLD) {
+            return response()->json(['success' => false, 'message' => 'Face verification failed - please try again.'], 422);
         }
 
         // occurred_at lets an offline-queued clock-in report when it actually
@@ -176,8 +189,9 @@ class AttendanceController extends Controller
             'clock_in_lng' => $data['lng'],
             'clock_in_distance_m' => $distance,
             'status' => $status,
-            'clock_in_method' => 'gps',
+            'clock_in_method' => 'gps+face',
             'clock_in_photo' => $this->storePhoto($request),
+            'clock_in_face_confidence' => $data['face_confidence'],
             // Reopen the day - a fresh clock-in supersedes any earlier
             // clock-out on the same day (e.g. re-clocking in after a
             // break), otherwise the stale clock-out would outlive this
@@ -187,6 +201,7 @@ class AttendanceController extends Controller
             'clock_out_lng' => null,
             'clock_out_method' => null,
             'clock_out_photo' => null,
+            'clock_out_face_confidence' => null,
             'clock_out_distance_m' => null,
             'synced_offline' => $syncedOffline,
         ];
@@ -231,6 +246,12 @@ class AttendanceController extends Controller
         if (! $outlet) {
             throw ValidationException::withMessages(['outlet' => 'No outlet assigned to this account - contact your manager.']);
         }
+        if (! $user->face_enrolled) {
+            throw ValidationException::withMessages(['face' => 'Enroll your face before clocking out - go to Profile > Enroll Face ID.']);
+        }
+        if ($data['face_confidence'] < self::FACE_MATCH_THRESHOLD) {
+            return response()->json(['success' => false, 'message' => 'Face verification failed - please try again.'], 422);
+        }
 
         $occurredAt = isset($data['occurred_at']) ? Carbon::parse($data['occurred_at']) : now();
         $syncedOffline = isset($data['occurred_at']);
@@ -260,8 +281,9 @@ class AttendanceController extends Controller
             'clock_out_lat' => $data['lat'],
             'clock_out_lng' => $data['lng'],
             'clock_out_distance_m' => $distance,
-            'clock_out_method' => 'gps',
+            'clock_out_method' => 'gps+face',
             'clock_out_photo' => $this->storePhoto($request),
+            'clock_out_face_confidence' => $data['face_confidence'],
             'synced_offline' => $record->synced_offline || $syncedOffline,
         ]);
 
@@ -278,6 +300,9 @@ class AttendanceController extends Controller
             // captured on-device even for an offline-queued event, then synced
             // together with it once connectivity returns.
             'photo' => 'required|image|max:5120',
+            // Cosine similarity against the enrolled reference embedding,
+            // computed on-device at capture time (see FaceRecognitionService).
+            'face_confidence' => 'required|numeric|between:0,1',
         ]);
     }
 
