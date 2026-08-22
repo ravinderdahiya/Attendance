@@ -1,0 +1,4 @@
+# Root .env is what the docker-compose stack reads its config from on the
+# VPS - never commit real secrets.
+.env
+.env.production

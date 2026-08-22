@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mharidhani}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-mharidhani}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mharidhani} -d ${POSTGRES_DB:-mharidhani}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - storage_public:/var/www/html/storage/app/public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "9000"
+
+  nginx:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.nginx
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+    restart: unless-stopped
+    # Host Apache/aaPanel already owns :80/:443 - bind loopback only.
+    ports:
+      - "127.0.0.1:8089:80"
+    volumes:
+      - storage_public:/var/www/storage/app/public:ro
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  storage_public:

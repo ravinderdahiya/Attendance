@@ -1,0 +1,18 @@
+# Build context: repository root
+FROM node:20-bookworm-slim AS admin-build
+WORKDIR /app
+COPY admin-panel/package.json admin-panel/package-lock.json ./
+RUN npm ci
+COPY admin-panel/ ./
+# Empty = same-origin (nginx proxies /api). Override at build if needed.
+ARG VITE_API_BASE_URL=
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+RUN npm run build
+
+FROM nginx:1.27-alpine
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=admin-build /app/dist /usr/share/nginx/html
+# Laravel's public/index.php is the fastcgi entry point for /api and
+# /sanctum - only that folder is needed here, not the whole backend image.
+COPY backend/public /var/www/public
+EXPOSE 80
