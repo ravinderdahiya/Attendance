@@ -1,0 +1,9 @@
+# Build context for deploy/Dockerfile.nginx (repo root) - never let a
+# committed or host node_modules/vendor shadow what npm ci/composer install
+# produce inside the image.
+**/node_modules
+**/vendor
+**/dist
+**/.git
+staff_app
+backend/vendor

@@ -1,0 +1,5 @@
+vendor
+node_modules
+.git
+storage/app/public/*
+!storage/app/public/.gitignore
