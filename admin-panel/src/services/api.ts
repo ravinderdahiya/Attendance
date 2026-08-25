@@ -4,7 +4,14 @@ import type {
   Visitor, VisitorStats,
 } from '../types';
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL ?? 'http://127.0.0.1:8090';
+// Production Docker sets VITE_API_BASE_URL='' meaning same-origin (nginx proxies /api).
+// Only use an absolute URL when the env var is a non-empty string — never fall back to
+// localhost here, or production builds ship "Failed to fetch" for every API call.
+const rawBase = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL =
+  typeof rawBase === 'string' && rawBase.trim() !== ''
+    ? rawBase.trim().replace(/\/$/, '')
+    : '';
 const TOKEN_KEY = 'shifttrack_token';
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);

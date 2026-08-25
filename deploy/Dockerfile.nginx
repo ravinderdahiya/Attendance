@@ -4,8 +4,8 @@ WORKDIR /app
 COPY website/package.json website/package-lock.json ./
 RUN npm ci
 COPY website/ ./
-# The "Admin Login" links default to the local dev admin-panel port -
-# point them at the same-origin /admin/ path served alongside this site.
+# Drop any developer .env that may have been copied; pin production URLs.
+RUN rm -f .env .env.local .env.production .env.production.local
 ENV VITE_ADMIN_URL=/admin/
 RUN npm run build
 
@@ -14,11 +14,21 @@ WORKDIR /app
 COPY admin-panel/package.json admin-panel/package-lock.json ./
 RUN npm ci
 COPY admin-panel/ ./
-# Served under /admin/ alongside the marketing site at the domain root.
+# Critical: a developer admin-panel/.env with VITE_API_BASE_URL=http://127.0.0.1:8090
+# must never win the production Vite build, or live login shows "Failed to fetch".
+RUN rm -f .env .env.local .env.production .env.production.local \
+ && printf '%s\n' \
+      'VITE_BASE_PATH=/admin/' \
+      'VITE_API_BASE_URL=' \
+      'VITE_SITE_URL=/' \
+      'VITE_DEV_USERNAME=' \
+      'VITE_DEV_PASSWORD=' \
+      > .env
 ENV VITE_BASE_PATH=/admin/
-# Empty = same-origin (nginx proxies /api). Override at build if needed.
-ARG VITE_API_BASE_URL=
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=
+ENV VITE_SITE_URL=/
+ENV VITE_DEV_USERNAME=
+ENV VITE_DEV_PASSWORD=
 RUN npm run build
 
 FROM nginx:1.27-alpine

@@ -33,8 +33,6 @@ services:
     build:
       context: .
       dockerfile: deploy/Dockerfile.nginx
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     restart: unless-stopped
     # Host Apache/aaPanel already owns :80/:443 - bind loopback only.
     ports:

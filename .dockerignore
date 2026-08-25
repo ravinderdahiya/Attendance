@@ -5,5 +5,9 @@
 **/vendor
 **/dist
 **/.git
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.production.example
 staff_app
 backend/vendor

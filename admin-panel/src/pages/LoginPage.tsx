@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { DEV_USERNAME, DEV_PASSWORD, SKIP_AUTOLOGIN_KEY } from '../auth/devAutoLogin';
 
-const SITE_URL = (import.meta as { env?: { VITE_SITE_URL?: string } }).env?.VITE_SITE_URL || 'http://localhost:5182';
+const rawSite = import.meta.env.VITE_SITE_URL;
+const SITE_URL =
+  typeof rawSite === 'string' && rawSite.trim() !== ''
+    ? rawSite.trim().replace(/\/$/, '')
+    : '/';
 
 export default function LoginPage() {
   const { login } = useAuth();
