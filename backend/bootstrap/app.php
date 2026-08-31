@@ -18,6 +18,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['manager' => EnsureManager::class]);
+        // Apache → docker nginx → php-fpm. Trust the forwarded client IP.
+        $middleware->trustProxies(
+            at: '*',
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO,
+        );
         // API-only app: never redirect guests to a named "login" web route.
         $middleware->redirectGuestsTo(fn () => null);
     })

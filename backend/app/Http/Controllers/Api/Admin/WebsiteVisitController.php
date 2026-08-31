@@ -68,13 +68,17 @@ class WebsiteVisitController extends Controller
         $visits = WebsiteVisit::query()
             ->latest()
             ->limit(100)
-            ->get(['id', 'source', 'referrer', 'path', 'utm_source', 'created_at'])
+            ->get(['id', 'source', 'referrer', 'path', 'utm_source', 'ip', 'latitude', 'longitude', 'city', 'created_at'])
             ->map(fn (WebsiteVisit $v) => [
                 'id' => $v->id,
                 'source' => $v->source,
                 'referrer' => $this->referrerHost($v->referrer),
                 'path' => $v->path,
                 'utm_source' => $v->utm_source,
+                'ip' => $v->ip,
+                'latitude' => $v->latitude,
+                'longitude' => $v->longitude,
+                'city' => $v->city,
                 'visited_at' => Carbon::parse($v->created_at)->timezone($tz)->toIso8601String(),
             ]);
 

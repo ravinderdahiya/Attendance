@@ -237,5 +237,9 @@ export interface WebsiteVisitRow {
   referrer: string | null;
   path: string | null;
   utm_source: string | null;
+  ip: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  city: string | null;
   visited_at: string;
 }

@@ -50,13 +50,16 @@ export default function WebsiteVisitsPage() {
   const exportCsv = () => {
     downloadCsv(
       'website_visits.csv',
-      ['When', 'Source', 'Referrer', 'Page', 'Campaign'],
+      ['When', 'Source', 'Referrer', 'Page', 'IP', 'City', 'Latitude', 'Longitude'],
       visits.map((v) => [
         fmtWhen(v.visited_at),
         SOURCE_LABELS[v.source] ?? v.source,
         v.referrer ?? '',
         v.path ?? '/',
-        v.utm_source ?? '',
+        v.ip ?? '',
+        v.city ?? '',
+        v.latitude ?? '',
+        v.longitude ?? '',
       ]),
     );
   };
@@ -66,7 +69,7 @@ export default function WebsiteVisitsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-extrabold text-xl text-ink-900">Website visits</h1>
-          <p className="text-xs text-ink-600 font-semibold mt-1">Who opened mharidhani.com — unique people and page views</p>
+          <p className="text-xs text-ink-600 font-semibold mt-1">Who opened mharidhani.com — IP, city and coordinates</p>
         </div>
         {visits.length > 0 && (
           <button onClick={exportCsv} className="flex items-center gap-1.5 h-10 px-4 rounded-[10px] border border-line font-bold text-xs text-ink-900">
@@ -145,6 +148,8 @@ export default function WebsiteVisitsPage() {
               <tr className="text-ink-600 uppercase text-[10px]">
                 <th className="text-left p-3 font-bold border-b-2 border-ink-300">When</th>
                 <th className="text-left p-3 font-bold border-b-2 border-ink-300">Source</th>
+                <th className="text-left p-3 font-bold border-b-2 border-ink-300">IP</th>
+                <th className="text-left p-3 font-bold border-b-2 border-ink-300">Location</th>
                 <th className="text-left p-3 font-bold border-b-2 border-ink-300">Came from</th>
                 <th className="text-left p-3 font-bold border-b-2 border-ink-300">Page</th>
               </tr>
@@ -157,6 +162,24 @@ export default function WebsiteVisitsPage() {
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${SOURCE_STYLES[v.source] ?? 'bg-ink-300 text-ink-600'}`}>
                       {SOURCE_LABELS[v.source] ?? v.source}
                     </span>
+                  </td>
+                  <td className="p-3 font-mono text-ink-900 whitespace-nowrap">{v.ip || '—'}</td>
+                  <td className="p-3 text-ink-600">
+                    {v.latitude != null && v.longitude != null ? (
+                      <a
+                        href={`https://maps.google.com/?q=${v.latitude},${v.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-terra font-semibold hover:underline"
+                      >
+                        <span className="block">{v.city || 'Map'}</span>
+                        <span className="block font-mono text-[10px] font-medium text-ink-600">
+                          {v.latitude.toFixed(5)}, {v.longitude.toFixed(5)}
+                        </span>
+                      </a>
+                    ) : (
+                      v.city || '—'
+                    )}
                   </td>
                   <td className="p-3 text-ink-600">{v.referrer || '—'}</td>
                   <td className="p-3 text-ink-600">{v.path || '/'}</td>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\WebsiteVisit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class WebsiteVisitController extends Controller
@@ -25,6 +26,8 @@ class WebsiteVisitController extends Controller
 
         $referrer = $data['referrer'] ?? null;
         $utm = $data['utm_source'] ?? null;
+        $ip = $request->ip();
+        $geo = $this->lookupGeo($ip);
 
         WebsiteVisit::create([
             'visitor_id' => $data['visitor_id'],
@@ -32,7 +35,11 @@ class WebsiteVisitController extends Controller
             'referrer' => $referrer ? Str::limit($referrer, 500, '') : null,
             'path' => $data['path'] ?? '/',
             'utm_source' => $utm,
-            'ip_hash' => hash('sha256', ($request->ip() ?? '').config('app.key')),
+            'ip' => $ip,
+            'latitude' => $geo['latitude'],
+            'longitude' => $geo['longitude'],
+            'city' => $geo['city'],
+            'ip_hash' => $ip ? hash('sha256', $ip.config('app.key')) : null,
         ]);
 
         return response()->json(['success' => true], 201);
@@ -79,5 +86,37 @@ class WebsiteVisitController extends Controller
         }
 
         return 'referral';
+    }
+
+    /** City-level coordinates from the visitor IP. Skips private/local addresses. */
+    private function lookupGeo(?string $ip): array
+    {
+        $empty = ['latitude' => null, 'longitude' => null, 'city' => null];
+        if (! $ip || ! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return $empty;
+        }
+
+        try {
+            $json = Http::timeout(2)
+                ->get('http://ip-api.com/json/'.$ip, ['fields' => 'status,lat,lon,city,country'])
+                ->json();
+        } catch (\Throwable) {
+            return $empty;
+        }
+
+        if (! is_array($json) || ($json['status'] ?? '') !== 'success') {
+            return $empty;
+        }
+
+        $city = trim(implode(', ', array_filter([
+            $json['city'] ?? null,
+            $json['country'] ?? null,
+        ])));
+
+        return [
+            'latitude' => isset($json['lat']) ? (float) $json['lat'] : null,
+            'longitude' => isset($json['lon']) ? (float) $json['lon'] : null,
+            'city' => $city !== '' ? Str::limit($city, 120, '') : null,
+        ];
     }
 }
