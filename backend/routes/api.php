@@ -12,7 +12,9 @@ use App\Http\Controllers\Api\Admin\ShiftController as AdminShiftController;
 use App\Http\Controllers\Api\Admin\StaffController;
 use App\Http\Controllers\Api\Admin\TimesheetController;
 use App\Http\Controllers\Api\Admin\VisitorController;
+use App\Http\Controllers\Api\Admin\WebsiteVisitController as AdminWebsiteVisitController;
 use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\WebsiteVisitController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FaceController;
 use App\Http\Controllers\Api\FieldVisitController;
@@ -23,6 +25,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/staff/login', [AuthController::class, 'staffLogin']);
 Route::post('/auth/manager/login', [AuthController::class, 'managerLogin']);
+Route::post('/website/visit', [WebsiteVisitController::class, 'store'])->middleware('throttle:30,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
@@ -93,5 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/labour/attendance', [LabourController::class, 'saveAttendance']);
 
         Route::get('/field-visits', [AdminFieldVisitController::class, 'index']);
+
+        Route::get('/website-visits', [AdminWebsiteVisitController::class, 'index']);
     });
 });

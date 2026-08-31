@@ -1,7 +1,7 @@
 import type {
   AppNotification, AttendanceRecord, Checkpoint, DashboardStats, FieldVisit, LabourSite, LabourWorkerRow,
   MonthlySummaryRow, Outlet, PatrolCheckpointStatus, PayrollHistory, PayrollRow, Shift, StaffUser, TimesheetRow, TrendPoint,
-  Visitor, VisitorStats,
+  Visitor, VisitorStats, WebsiteVisitRow, WebsiteVisitSourceRow, WebsiteVisitStats, WebsiteVisitTrendPoint,
 } from '../types';
 
 // Production Docker sets VITE_API_BASE_URL='' meaning same-origin (nginx proxies /api).
@@ -124,6 +124,15 @@ export const saveLabourAttendance = (payload: { date: string; entries: { worker_
 // --- FIELD VISITS ---
 export const getFieldVisits = (userId: number, date?: string) =>
   request<{ success: boolean; visits: FieldVisit[] }>(`/api/admin/field-visits?user_id=${userId}${date ? `&date=${date}` : ''}`);
+
+export const getWebsiteVisits = () =>
+  request<{
+    success: boolean;
+    stats: WebsiteVisitStats;
+    trend: WebsiteVisitTrendPoint[];
+    sources: WebsiteVisitSourceRow[];
+    visits: WebsiteVisitRow[];
+  }>('/api/admin/website-visits');
 
 // --- NOTIFICATIONS (admin login also gets a staff-style token, so this works if ever needed) ---
 export const getNotifications = () => request<{ success: boolean; notifications: AppNotification[] }>('/api/notifications');

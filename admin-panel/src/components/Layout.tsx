@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Users, MapPin, Radar, CalendarClock, ClipboardList, LogOut,
-  Wallet, DoorOpen, ShieldCheck, HardHat, Route,
+  Wallet, DoorOpen, ShieldCheck, HardHat, Route, Globe,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 
@@ -21,6 +21,10 @@ const MODULE_NAV_ITEMS = [
   { to: '/patrols', label: 'Security Patrols', icon: ShieldCheck },
   { to: '/labour', label: 'Labour Attendance', icon: HardHat },
   { to: '/field-visits', label: 'Field Visits', icon: Route },
+];
+
+const WEBSITE_NAV_ITEMS = [
+  { to: '/website-visits', label: 'Website visits', icon: Globe },
 ];
 
 function NavItem({ to, label, icon: Icon, end }: { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean }) {
@@ -54,6 +58,8 @@ export default function Layout({ children }: { children: ReactNode }) {
           {NAV_ITEMS.map((item) => <NavItem key={item.to} {...item} />)}
           <div className="font-mono text-[9px] font-bold tracking-wide uppercase text-white/35 px-2.5 pt-4 pb-1.5">Attendance modules</div>
           {MODULE_NAV_ITEMS.map((item) => <NavItem key={item.to} {...item} />)}
+          <div className="font-mono text-[9px] font-bold tracking-wide uppercase text-white/35 px-2.5 pt-4 pb-1.5">Website</div>
+          {WEBSITE_NAV_ITEMS.map((item) => <NavItem key={item.to} {...item} />)}
         </nav>
         <button
           onClick={logout}

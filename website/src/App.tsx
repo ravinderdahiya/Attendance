@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Clock, MapPin } from 'lucide-react';
 import Nav from './components/Nav';
 import Hero from './components/Hero';
@@ -6,9 +6,14 @@ import Menu from './components/Menu';
 import Footer from './components/Footer';
 import ReserveModal from './components/ReserveModal';
 import { GALLERY, OUTLETS } from './content';
+import { trackVisit } from './trackVisit';
 
 export default function App() {
   const [reserveOpen, setReserveOpen] = useState(false);
+
+  useEffect(() => {
+    trackVisit();
+  }, []);
 
   return (
     <div className="bg-ink text-cream">

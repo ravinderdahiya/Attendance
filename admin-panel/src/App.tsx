@@ -14,6 +14,7 @@ import VisitorsPage from './pages/VisitorsPage';
 import PatrolsPage from './pages/PatrolsPage';
 import LabourPage from './pages/LabourPage';
 import FieldVisitsPage from './pages/FieldVisitsPage';
+import WebsiteVisitsPage from './pages/WebsiteVisitsPage';
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -39,6 +40,7 @@ function Root() {
       <Route path="/patrols" element={<Protected><PatrolsPage /></Protected>} />
       <Route path="/labour" element={<Protected><LabourPage /></Protected>} />
       <Route path="/field-visits" element={<Protected><FieldVisitsPage /></Protected>} />
+      <Route path="/website-visits" element={<Protected><WebsiteVisitsPage /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

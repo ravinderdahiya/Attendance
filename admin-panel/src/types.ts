@@ -205,3 +205,37 @@ export interface AppNotification {
   read_at: string | null;
   created_at: string;
 }
+
+export type WebsiteVisitSource = 'search' | 'direct' | 'social' | 'referral';
+
+export interface WebsiteVisitStats {
+  todayViews: number;
+  todayUnique: number;
+  weekViews: number;
+  weekUnique: number;
+  monthViews: number;
+  monthUnique: number;
+  allViews: number;
+  allUnique: number;
+}
+
+export interface WebsiteVisitTrendPoint {
+  date: string;
+  views: number;
+  unique: number;
+}
+
+export interface WebsiteVisitSourceRow {
+  source: WebsiteVisitSource;
+  views: number;
+  unique_visitors: number;
+}
+
+export interface WebsiteVisitRow {
+  id: number;
+  source: WebsiteVisitSource;
+  referrer: string | null;
+  path: string | null;
+  utm_source: string | null;
+  visited_at: string;
+}
